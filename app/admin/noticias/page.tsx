@@ -98,7 +98,7 @@ export default async function NewsListPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-[#dfe5ee]">
-              {pageArticles.map((article) => (
+              {pageArticles.map(article => (
                 <tr className="bg-white align-top" key={article.id}>
                   <td className="px-4 py-4">
                     <strong className="block text-[#061b3d]">
@@ -112,7 +112,9 @@ export default async function NewsListPage({
                     {categoryNames(article, seedData.categories)}
                   </td>
                   <td className="px-4 py-4">
-                    <span className={`${statusClass} ${statusStyles[article.status]}`}>
+                    <span
+                      className={`${statusClass} ${statusStyles[article.status]}`}
+                    >
                       {statusLabels[article.status]}
                     </span>
                   </td>
@@ -142,7 +144,7 @@ export default async function NewsListPage({
         </div>
 
         <div className="grid gap-3 md:hidden">
-          {pageArticles.map((article) => (
+          {pageArticles.map(article => (
             <article
               className="rounded-md border border-[#dfe5ee] bg-white p-4"
               key={article.id}
@@ -151,7 +153,9 @@ export default async function NewsListPage({
                 <h2 className="text-lg font-bold leading-tight text-[#061b3d]">
                   {article.title}
                 </h2>
-                <span className={`${statusClass} ${statusStyles[article.status]}`}>
+                <span
+                  className={`${statusClass} ${statusStyles[article.status]}`}
+                >
                   {statusLabels[article.status]}
                 </span>
               </div>
@@ -187,7 +191,7 @@ export default async function NewsListPage({
               aria-disabled={safePage === 1}
               className={`inline-flex min-h-10 items-center justify-center rounded-md border border-[#dfe5ee] px-4 text-sm font-black uppercase ${
                 safePage === 1
-                  ? 'pointer-events-none bg-slate-100 text-slate-400'
+                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                   : 'bg-white text-[#061b3d]'
               }`}
               href={pageHref(Math.max(safePage - 1, 1))}
@@ -195,7 +199,7 @@ export default async function NewsListPage({
               Anterior
             </Link>
             {Array.from({ length: totalPages }, (_, index) => index + 1).map(
-              (page) => (
+              page => (
                 <Link
                   className={`inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#dfe5ee] text-sm font-black ${
                     page === safePage
@@ -213,7 +217,7 @@ export default async function NewsListPage({
               aria-disabled={safePage === totalPages}
               className={`inline-flex min-h-10 items-center justify-center rounded-md border border-[#dfe5ee] px-4 text-sm font-black uppercase ${
                 safePage === totalPages
-                  ? 'pointer-events-none bg-slate-100 text-slate-400'
+                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                   : 'bg-white text-[#061b3d]'
               }`}
               href={pageHref(Math.min(safePage + 1, totalPages))}

@@ -1,13 +1,1 @@
-@import "tailwindcss";
-
-body {
-  background: #eef2f7;
-  color: #061b3d;
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-a {
-  color: inherit;
-  cursor: pointer;
-  text-decoration: none;
-}
+@import 'tailwindcss';
