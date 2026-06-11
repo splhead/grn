@@ -12,7 +12,8 @@ const news = [
     image:
       'https://images.unsplash.com/photo-1604580864964-0462f5d5b1a8?auto=format&fit=crop&w=300&q=80',
     title: 'Operação da PM combate criminalidade em Rondônia',
-    summary: 'Ação foi realizada em vários bairros da capital e interior do estado.',
+    summary:
+      'Ação foi realizada em vários bairros da capital e interior do estado.',
     meta: '16 de maio de 2025 • 2 min'
   },
   {
@@ -33,7 +34,8 @@ const news = [
     image:
       'https://images.unsplash.com/photo-1573164713988-8665fc963095?auto=format&fit=crop&w=300&q=80',
     title: 'Governo de RO lança programa de valorização dos professores',
-    summary: 'Iniciativa prevê capacitação e novos incentivos para profissionais.',
+    summary:
+      'Iniciativa prevê capacitação e novos incentivos para profissionais.',
     meta: '15 de maio de 2025 • 2 min'
   },
   {
@@ -75,29 +77,30 @@ const categories = [
   ['💚', 'Saúde']
 ]
 
-const cardClass = 'rounded-[5px] border border-[#dfe5ee] bg-white p-5'
+const cardClass =
+  'rounded-[5px] border border-[#f00018]/45 bg-[#0c0c0f] p-5 text-white shadow-[0_18px_40px_rgba(0,0,0,0.35)]'
 const cardTitleClass =
-  'border-b-2 border-[#dfe5ee] pb-2.5 text-2xl font-bold uppercase'
+  'border-b-2 border-[#f00018] pb-2.5 text-2xl font-black italic uppercase text-[#ffcc00]'
 
 export default function Home() {
   return (
     <main className="mx-auto grid max-w-[1250px] grid-cols-1 gap-[25px] px-5 py-7 lg:grid-cols-[1fr_400px]">
       <section>
-        <article className="relative h-[460px] overflow-hidden rounded bg-black text-white lg:h-[545px]">
+        <article className="relative h-[460px] overflow-hidden rounded border border-[#f00018]/45 bg-black text-white shadow-[0_24px_60px_rgba(0,0,0,0.5)] lg:h-[545px]">
           <img
             alt=""
             className="absolute inset-0 h-full w-full object-cover"
             src="https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1100&q=80"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/85" />
-          <span className="absolute left-8 top-9 rounded bg-[#07337a] px-[18px] py-2 font-bold uppercase">
+          <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(0,0,0,0.78),rgba(20,0,3,0.58),rgba(0,0,0,0.92))]" />
+          <span className="absolute left-8 top-9 rounded bg-[#f00018] px-[18px] py-2 font-black uppercase">
             Cidades
           </span>
           <div className="absolute bottom-6 left-6 right-8">
-            <h1 className="mb-3 max-w-[680px] text-[32px] font-bold leading-[1.05] lg:text-[42px]">
+            <h1 className="mb-3 max-w-[680px] text-[32px] font-black italic leading-[1.05] text-[#ffcc00] lg:text-[42px]">
               Porto Velho terá nova orla turística no rio Madeira
             </h1>
-            <p className="mb-5 max-w-[720px] text-xl lg:text-[22px]">
+            <p className="mb-5 max-w-[720px] text-xl font-bold lg:text-[22px]">
               Projeto vai requalificar a orla, promover turismo, lazer e
               desenvolvimento econômico para a capital.
             </p>
@@ -105,23 +108,25 @@ export default function Home() {
           </div>
         </article>
 
-        <div className="my-[25px] grid grid-cols-1 rounded border border-[#dfe5ee] bg-white md:grid-cols-3 lg:grid-cols-6">
+        <div className="my-[25px] grid grid-cols-1 rounded border border-[#f00018]/45 bg-[#0c0c0f] text-white md:grid-cols-3 lg:grid-cols-6">
           {categories.map(([icon, label]) => (
             <div
-              className="border-b border-[#dfe5ee] p-[22px_5px] text-center text-[33px] md:border-r lg:border-b-0"
+              className="border-b border-[#f00018]/35 p-[22px_5px] text-center text-[33px] md:border-r lg:border-b-0"
               key={label}
             >
               {icon}
-              <b className="mt-2 block text-[15px] uppercase">{label}</b>
+              <b className="mt-2 block text-[15px] uppercase text-[#ffcc00]">
+                {label}
+              </b>
             </div>
           ))}
         </div>
 
         <h2 className={cardTitleClass}>Últimas Notícias</h2>
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          {news.map((item) => (
+          {news.map(item => (
             <article
-              className="grid grid-cols-1 gap-3.5 border-b border-[#dfe5ee] pb-4 sm:grid-cols-[130px_1fr]"
+              className="grid grid-cols-1 gap-3.5 border-b border-[#f00018]/35 pb-4 text-white sm:grid-cols-[130px_1fr]"
               key={item.title}
             >
               <img
@@ -130,27 +135,29 @@ export default function Home() {
                 src={item.image}
               />
               <div>
-                <h3 className="mb-2 text-xl font-bold">{item.title}</h3>
-                <p className="mb-2 text-[#344]">{item.summary}</p>
-                <small className="mt-2 block text-[#667]">{item.meta}</small>
+                <h3 className="mb-2 text-xl font-black">{item.title}</h3>
+                <p className="mb-2 text-zinc-300">{item.summary}</p>
+                <small className="mt-2 block font-bold text-[#ffcc00]">
+                  {item.meta}
+                </small>
               </div>
             </article>
           ))}
         </div>
         <button
-          className="my-5 w-full rounded-[5px] border border-[#dfe5ee] bg-white p-4 font-black uppercase text-[#061b3d]"
+          className="my-5 w-full rounded-[5px] border border-[#f00018] bg-[#f00018] p-4 font-black uppercase text-white shadow-[0_14px_30px_rgba(240,0,24,0.28)]"
           type="button"
         >
           Ver mais notícias⌄
         </button>
       </section>
 
-      <aside className="grid content-start gap-[25px]">
+      <aside className="grid content-start gap-6.25">
         <div className={cardClass}>
           <h2 className={cardTitleClass}>Destaques</h2>
-          {highlights.map((item) => (
+          {highlights.map(item => (
             <div
-              className="grid grid-cols-[115px_1fr] gap-3.5 border-b border-[#dfe5ee] py-[13px]"
+              className="grid grid-cols-[115px_1fr] gap-3.5 border-b border-[#f00018]/35 py-3.25"
               key={item.title}
             >
               <img
@@ -160,11 +167,11 @@ export default function Home() {
               />
               <p>
                 <b className="text-[17px]">{item.title}</b>
-                <small className="mt-2 block text-[#667]">{item.meta}</small>
+                <small className="mt-2 block text-[#ffcc00]">{item.meta}</small>
               </p>
             </div>
           ))}
-          <a className="mt-5 block text-center font-black uppercase">
+          <a className="mt-5 block text-center font-black uppercase text-[#ffcc00]">
             Ver todas as notícias →
           </a>
         </div>
@@ -173,11 +180,11 @@ export default function Home() {
           <h2 className={cardTitleClass}>✉ Boletim Informativo</h2>
           <p>Receba as principais notícias no seu e-mail.</p>
           <input
-            className="my-3 w-full rounded border border-[#dfe5ee] p-[15px]"
+            className="my-3 w-full rounded border border-[#f00018]/45 bg-[#050505] p-3.75 text-white outline-none placeholder:text-zinc-500"
             placeholder="Digite seu e-mail"
           />
           <button
-            className="w-full rounded bg-[#052b67] px-6 py-3 font-black uppercase text-white"
+            className="w-full rounded bg-[#f00018] px-6 py-3 font-black uppercase text-white"
             type="button"
           >
             Assinar
@@ -194,12 +201,12 @@ export default function Home() {
             ['🟢 Grupo no WhatsApp', 'Entrar']
           ].map(([label, action]) => (
             <div
-              className="flex items-center justify-between border-b border-[#dfe5ee] py-2.5"
+              className="flex items-center justify-between border-b border-[#f00018]/35 py-2.5"
               key={label}
             >
               {label}
               <button
-                className="rounded bg-[#052b67] px-[15px] py-2 font-black uppercase text-white"
+                className="rounded bg-[#f00018] px-3.75 py-2 font-black uppercase text-white"
                 type="button"
               >
                 {action}
@@ -212,8 +219,8 @@ export default function Home() {
           <h2 className={cardTitleClass}>Área Administrativa</h2>
           <p>Acesso restrito para editor, revisor e administrador.</p>
           <Link
-            className="mt-4 flex min-h-[42px] w-full items-center justify-center rounded bg-[#e31837] px-[18px] font-black uppercase text-white"
-            href="/admin"
+            className="mt-4 flex min-h-10.5 w-full items-center justify-center rounded bg-[#ffcc00] px-4.5 font-black uppercase text-[#111114]"
+            href="/admin/login"
           >
             Acessar painel
           </Link>

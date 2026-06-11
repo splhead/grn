@@ -8,7 +8,7 @@ export function Label({
   return (
     <label
       className={cn(
-        'grid gap-2 text-sm font-extrabold text-slate-700',
+        'grid gap-2 text-sm font-extrabold text-zinc-200',
         className
       )}
       {...props}

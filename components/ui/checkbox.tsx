@@ -8,7 +8,7 @@ export function Checkbox({
   return (
     <input
       className={cn(
-        'h-5 w-5 rounded border-[#dfe5ee] accent-[#08285c]',
+        'h-5 w-5 rounded border-[#f00018]/45 accent-[#ffcc00]',
         className
       )}
       type="checkbox"

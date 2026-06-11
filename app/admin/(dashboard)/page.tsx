@@ -24,9 +24,9 @@ const statusLabels: Record<NewsArticle['status'], string> = {
 }
 
 const statusStyles: Record<NewsArticle['status'], string> = {
-  draft: 'bg-slate-100 text-slate-600',
-  review: 'bg-[#fff4d7] text-[#8a5a00]',
-  published: 'bg-[#e8f7ee] text-[#0d7130]'
+  draft: 'bg-zinc-800 text-zinc-300',
+  review: 'bg-[#ffcc00] text-[#111114]',
+  published: 'bg-green-500 text-white'
 }
 
 function buildNewsList() {
@@ -51,7 +51,7 @@ function buildNewsList() {
 }
 
 function pageHref(page: number) {
-  return `/admin/noticias?page=${page}`
+  return `/admin?page=${page}`
 }
 
 export default async function NewsListPage({
@@ -70,25 +70,25 @@ export default async function NewsListPage({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <span className={eyebrowClass}>Painel administrativo</span>
-          <h1 className="text-3xl font-black leading-tight text-[#061b3d]">
+          <h1 className="text-3xl font-black italic leading-tight text-white">
             Notícias
           </h1>
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-zinc-300">
             Acompanhe status, atualização e ações editoriais.
           </p>
         </div>
         <Link
-          className="inline-flex min-h-11 items-center justify-center rounded-md border border-[#dfe5ee] bg-white px-4 font-black uppercase text-[#061b3d]"
-          href="/admin"
+          className="inline-flex min-h-11 items-center justify-center rounded-md border border-[#f00018]/55 bg-[#0c0c0f] px-4 font-black uppercase text-white transition hover:bg-[#f00018]"
+          href="/admin/noticias"
         >
           Nova notícia
         </Link>
       </div>
 
       <section className={panelClass}>
-        <div className="hidden overflow-hidden rounded-md border border-[#dfe5ee] md:block">
+        <div className="hidden overflow-hidden rounded-md border border-[#f00018]/45 md:block">
           <table className="w-full border-collapse text-left">
-            <thead className="bg-[#f5f7fb] text-xs uppercase tracking-[0.08em] text-slate-500">
+            <thead className="bg-[#f00018] text-xs uppercase tracking-[0.08em] text-white">
               <tr>
                 <th className="px-4 py-3">Título</th>
                 <th className="px-4 py-3">Categorias</th>
@@ -97,18 +97,18 @@ export default async function NewsListPage({
                 <th className="px-4 py-3 text-right">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#dfe5ee]">
+            <tbody className="divide-y divide-[#f00018]/35">
               {pageArticles.map(article => (
-                <tr className="bg-white align-top" key={article.id}>
+                <tr className="bg-[#0c0c0f] align-top" key={article.id}>
                   <td className="px-4 py-4">
-                    <strong className="block text-[#061b3d]">
+                    <strong className="block text-white">
                       {article.title}
                     </strong>
-                    <small className="mt-1 block max-w-[420px] text-slate-500">
+                    <small className="mt-1 block max-w-[420px] text-zinc-400">
                       {article.subtitle}
                     </small>
                   </td>
-                  <td className="px-4 py-4 text-sm text-slate-600">
+                  <td className="px-4 py-4 text-sm text-zinc-300">
                     {categoryNames(article, seedData.categories)}
                   </td>
                   <td className="px-4 py-4">
@@ -118,7 +118,7 @@ export default async function NewsListPage({
                       {statusLabels[article.status]}
                     </span>
                   </td>
-                  <td className="px-4 py-4 text-sm text-slate-500">
+                  <td className="px-4 py-4 text-sm text-zinc-400">
                     {formatDate(article.updatedAt)}
                   </td>
                   <td className="px-4 py-4">
@@ -146,11 +146,11 @@ export default async function NewsListPage({
         <div className="grid gap-3 md:hidden">
           {pageArticles.map(article => (
             <article
-              className="rounded-md border border-[#dfe5ee] bg-white p-4"
+              className="rounded-md border border-[#f00018]/45 bg-[#050505] p-4"
               key={article.id}
             >
               <div className="flex items-start justify-between gap-3">
-                <h2 className="text-lg font-bold leading-tight text-[#061b3d]">
+                <h2 className="text-lg font-black leading-tight text-white">
                   {article.title}
                 </h2>
                 <span
@@ -159,8 +159,8 @@ export default async function NewsListPage({
                   {statusLabels[article.status]}
                 </span>
               </div>
-              <p className="mt-2 text-sm text-slate-500">{article.subtitle}</p>
-              <div className="mt-3 grid gap-1 text-sm text-slate-600">
+              <p className="mt-2 text-sm text-zinc-400">{article.subtitle}</p>
+              <div className="mt-3 grid gap-1 text-sm text-zinc-300">
                 <span>{categoryNames(article, seedData.categories)}</span>
                 <span>Atualizada em {formatDate(article.updatedAt)}</span>
               </div>
@@ -182,17 +182,17 @@ export default async function NewsListPage({
           ))}
         </div>
 
-        <div className="mt-5 flex flex-col gap-3 border-t border-[#dfe5ee] pt-5 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-slate-500">
+        <div className="mt-5 flex flex-col gap-3 border-t border-[#f00018]/45 pt-5 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-zinc-400">
             Página {safePage} de {totalPages} · {articles.length} notícias
           </p>
           <div className="flex items-center gap-2">
             <Link
               aria-disabled={safePage === 1}
-              className={`inline-flex min-h-10 items-center justify-center rounded-md border border-[#dfe5ee] px-4 text-sm font-black uppercase ${
+              className={`inline-flex min-h-10 items-center justify-center rounded-md border border-[#f00018]/45 px-4 text-sm font-black uppercase ${
                 safePage === 1
-                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                  : 'bg-white text-[#061b3d]'
+                  ? 'cursor-not-allowed bg-zinc-900 text-zinc-600'
+                  : 'bg-[#0c0c0f] text-white'
               }`}
               href={pageHref(Math.max(safePage - 1, 1))}
             >
@@ -201,10 +201,10 @@ export default async function NewsListPage({
             {Array.from({ length: totalPages }, (_, index) => index + 1).map(
               page => (
                 <Link
-                  className={`inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#dfe5ee] text-sm font-black ${
+                  className={`inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#f00018]/45 text-sm font-black ${
                     page === safePage
-                      ? 'bg-[#08285c] text-white'
-                      : 'bg-white text-[#061b3d]'
+                      ? 'bg-[#ffcc00] text-[#111114]'
+                      : 'bg-[#0c0c0f] text-white'
                   }`}
                   href={pageHref(page)}
                   key={page}
@@ -215,10 +215,10 @@ export default async function NewsListPage({
             )}
             <Link
               aria-disabled={safePage === totalPages}
-              className={`inline-flex min-h-10 items-center justify-center rounded-md border border-[#dfe5ee] px-4 text-sm font-black uppercase ${
+              className={`inline-flex min-h-10 items-center justify-center rounded-md border border-[#f00018]/45 px-4 text-sm font-black uppercase ${
                 safePage === totalPages
-                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                  : 'bg-white text-[#061b3d]'
+                  ? 'cursor-not-allowed bg-zinc-900 text-zinc-600'
+                  : 'bg-[#0c0c0f] text-white'
               }`}
               href={pageHref(Math.min(safePage + 1, totalPages))}
             >

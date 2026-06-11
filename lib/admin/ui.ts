@@ -34,13 +34,15 @@ export const editorialUsers = [
   }
 ]
 
-export const panelClass = 'rounded-lg border border-[#dfe5ee] bg-white p-4 sm:p-6'
-export const compactPanelClass = 'rounded-lg border border-[#dfe5ee] bg-white p-5'
+export const panelClass =
+  'rounded-lg border border-[#f00018]/45 bg-[#0c0c0f] p-4 text-white shadow-[0_18px_40px_rgba(0,0,0,0.35)] sm:p-6'
+export const compactPanelClass =
+  'rounded-lg border border-[#f00018]/45 bg-[#0c0c0f] p-5 text-white shadow-[0_18px_40px_rgba(0,0,0,0.35)]'
 export const eyebrowClass =
-  'mb-2 block text-xs font-black uppercase tracking-[0.08em] text-[#e31837]'
-export const fieldClass = 'grid gap-2 text-sm font-extrabold text-slate-700'
+  'mb-2 block text-xs font-black uppercase tracking-[0.08em] text-[#ffcc00]'
+export const fieldClass = 'grid gap-2 text-sm font-extrabold text-zinc-200'
 export const inputClass =
-  'min-h-12 min-w-0 rounded-md border border-[#dfe5ee] bg-slate-50 px-3.5 py-3 text-base text-[#061b3d] outline-none focus:border-[#08285c] focus:ring-2 focus:ring-[#08285c]/15'
+  'min-h-12 min-w-0 rounded-md border border-[#f00018]/45 bg-[#050505] px-3.5 py-3 text-base text-white outline-none focus:border-[#ffcc00] focus:ring-2 focus:ring-[#ffcc00]/20'
 export const statusClass =
   'inline-flex flex-none rounded-full px-2.5 py-1.5 text-xs font-black uppercase'
 
