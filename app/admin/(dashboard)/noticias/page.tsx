@@ -1,4 +1,6 @@
+import ImagePickerInput from '@/components/image-picker-input'
 import NewsBodyEditor from '@/components/news-body-editor'
+import PublicationDatePicker from '@/components/publication-date-picker'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
@@ -20,7 +22,7 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <section className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_390px]">
+      <section className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_0px]">
         <section className={panelClass}>
           <div className="mb-5 grid gap-4 sm:flex sm:items-center sm:justify-between">
             <div>
@@ -47,13 +49,16 @@ export default function AdminPage() {
               <Input defaultValue="Resumo curto para aparecer nas chamadas da home." />
             </Label>
             <Label>
-              Imagem de capa opcional
-              <Input placeholder="https://..." />
+              Imagem de capa
+              <ImagePickerInput name="coverImage" />
             </Label>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Label>
                 Data de publicacao
-                <Input type="datetime-local" defaultValue="2026-06-08T09:00" />
+                <PublicationDatePicker
+                  defaultValue="2026-06-08T09:00"
+                  name="publishedAt"
+                />
               </Label>
             </div>
             <fieldset className="grid gap-3 rounded-md border border-[#f00018]/45 p-4 text-sm font-extrabold text-zinc-200">

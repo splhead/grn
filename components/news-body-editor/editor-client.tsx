@@ -5,6 +5,7 @@ import Link from '@tiptap/extension-link'
 import TextAlign from '@tiptap/extension-text-align'
 import { EditorContent, useEditor, type Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
+import { ImagePickerDialog } from '@/components/image-picker-input'
 import { useState, type ReactNode } from 'react'
 
 type EditorClientProps = {
@@ -20,8 +21,22 @@ type ToolbarButtonProps = {
   onClick: () => void
 }
 
+type EditorIconName =
+  | 'blockquote'
+  | 'bulletList'
+  | 'codeBlock'
+  | 'horizontalRule'
+  | 'image'
+  | 'inlineCode'
+  | 'link'
+  | 'orderedList'
+  | 'paragraph'
+  | 'redo'
+  | 'undo'
+
 const extensions = [
   StarterKit.configure({
+    link: false,
     heading: {
       levels: [2, 3]
     }
@@ -71,6 +86,100 @@ function ToolbarButton({
   )
 }
 
+function EditorIcon({ name }: { name: EditorIconName }) {
+  const strokeProps = {
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    strokeWidth: 2
+  }
+
+  return (
+    <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24">
+      {name === 'undo' && (
+        <>
+          <path {...strokeProps} d="M9 7 5 11l4 4" />
+          <path {...strokeProps} d="M5 11h8a6 6 0 0 1 6 6v1" />
+        </>
+      )}
+      {name === 'redo' && (
+        <>
+          <path {...strokeProps} d="m15 7 4 4-4 4" />
+          <path {...strokeProps} d="M19 11h-8a6 6 0 0 0-6 6v1" />
+        </>
+      )}
+      {name === 'paragraph' && (
+        <>
+          <path {...strokeProps} d="M6 5h12" />
+          <path {...strokeProps} d="M6 9h12" />
+          <path {...strokeProps} d="M6 13h8" />
+          <path {...strokeProps} d="M6 17h10" />
+        </>
+      )}
+      {name === 'inlineCode' && (
+        <>
+          <path {...strokeProps} d="m9 8-4 4 4 4" />
+          <path {...strokeProps} d="m15 8 4 4-4 4" />
+        </>
+      )}
+      {name === 'bulletList' && (
+        <>
+          <path {...strokeProps} d="M10 6h9" />
+          <path {...strokeProps} d="M10 12h9" />
+          <path {...strokeProps} d="M10 18h9" />
+          <circle cx="5" cy="6" fill="currentColor" r="1.4" />
+          <circle cx="5" cy="12" fill="currentColor" r="1.4" />
+          <circle cx="5" cy="18" fill="currentColor" r="1.4" />
+        </>
+      )}
+      {name === 'orderedList' && (
+        <>
+          <path {...strokeProps} d="M10 6h9" />
+          <path {...strokeProps} d="M10 12h9" />
+          <path {...strokeProps} d="M10 18h9" />
+          <text fill="currentColor" fontSize="5" fontWeight="800" x="3.2" y="7.7">
+            1
+          </text>
+          <text fill="currentColor" fontSize="5" fontWeight="800" x="3.2" y="13.7">
+            2
+          </text>
+          <text fill="currentColor" fontSize="5" fontWeight="800" x="3.2" y="19.7">
+            3
+          </text>
+        </>
+      )}
+      {name === 'blockquote' && (
+        <>
+          <path {...strokeProps} d="M8 7H5v5h4v5H5" />
+          <path {...strokeProps} d="M17 7h-3v5h4v5h-4" />
+        </>
+      )}
+      {name === 'codeBlock' && (
+        <>
+          <path {...strokeProps} d="M8 8H5v8h3" />
+          <path {...strokeProps} d="M16 8h3v8h-3" />
+          <path {...strokeProps} d="m11 17 2-10" />
+        </>
+      )}
+      {name === 'horizontalRule' && <path {...strokeProps} d="M5 12h14" />}
+      {name === 'link' && (
+        <>
+          <path {...strokeProps} d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1" />
+          <path {...strokeProps} d="M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1" />
+        </>
+      )}
+      {name === 'image' && (
+        <>
+          <rect {...strokeProps} height="14" rx="2" width="16" x="4" y="5" />
+          <circle cx="9" cy="10" fill="currentColor" r="1.5" />
+          <path {...strokeProps} d="m6 17 4-4 3 3 2-2 3 3" />
+        </>
+      )}
+    </svg>
+  )
+}
+
 function ToolbarDivider() {
   return <span className="my-2 hidden h-5 w-px flex-none bg-[#f00018]/35 sm:block" />
 }
@@ -110,17 +219,13 @@ function setLink(editor: Editor) {
   editor.chain().focus().extendMarkRange('link').setLink({ href: url.trim() }).run()
 }
 
-function insertImage(editor: Editor) {
-  const src = window.prompt('URL da imagem', 'https://')
-
-  if (!src?.trim()) {
-    return
-  }
-
-  editor.chain().focus().setImage({ src: src.trim() }).run()
-}
-
-function EditorToolbar({ editor }: { editor: Editor }) {
+function EditorToolbar({
+  editor,
+  onOpenImageDialog
+}: {
+  editor: Editor
+  onOpenImageDialog: () => void
+}) {
   return (
     <div className="flex flex-wrap items-center gap-1.5 border-b border-[#f00018]/45 bg-[linear-gradient(135deg,#050505,#120608)] px-3 py-2">
       <ToolbarButton
@@ -128,14 +233,14 @@ function EditorToolbar({ editor }: { editor: Editor }) {
         label="Desfazer"
         onClick={() => editor.chain().focus().undo().run()}
       >
-        UN
+        <EditorIcon name="undo" />
       </ToolbarButton>
       <ToolbarButton
         disabled={!editor.can().redo()}
         label="Refazer"
         onClick={() => editor.chain().focus().redo().run()}
       >
-        RE
+        <EditorIcon name="redo" />
       </ToolbarButton>
       <ToolbarDivider />
       <ToolbarButton
@@ -143,7 +248,7 @@ function EditorToolbar({ editor }: { editor: Editor }) {
         label="Paragrafo"
         onClick={() => editor.chain().focus().setParagraph().run()}
       >
-        P
+        <EditorIcon name="paragraph" />
       </ToolbarButton>
       <ToolbarButton
         active={editor.isActive('heading', { level: 2 })}
@@ -186,7 +291,7 @@ function EditorToolbar({ editor }: { editor: Editor }) {
         label="Codigo inline"
         onClick={() => editor.chain().focus().toggleCode().run()}
       >
-        {'</>'}
+        <EditorIcon name="inlineCode" />
       </ToolbarButton>
       <ToolbarDivider />
       <ToolbarButton
@@ -223,34 +328,34 @@ function EditorToolbar({ editor }: { editor: Editor }) {
         label="Lista"
         onClick={() => editor.chain().focus().toggleBulletList().run()}
       >
-        UL
+        <EditorIcon name="bulletList" />
       </ToolbarButton>
       <ToolbarButton
         active={editor.isActive('orderedList')}
         label="Lista numerada"
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
       >
-        1.
+        <EditorIcon name="orderedList" />
       </ToolbarButton>
       <ToolbarButton
         active={editor.isActive('blockquote')}
         label="Citacao"
         onClick={() => editor.chain().focus().toggleBlockquote().run()}
       >
-        Q
+        <EditorIcon name="blockquote" />
       </ToolbarButton>
       <ToolbarButton
         active={editor.isActive('codeBlock')}
         label="Bloco de codigo"
         onClick={() => editor.chain().focus().toggleCodeBlock().run()}
       >
-        {'{}'}
+        <EditorIcon name="codeBlock" />
       </ToolbarButton>
       <ToolbarButton
         label="Separador"
         onClick={() => editor.chain().focus().setHorizontalRule().run()}
       >
-        HR
+        <EditorIcon name="horizontalRule" />
       </ToolbarButton>
       <ToolbarDivider />
       <ToolbarButton
@@ -258,10 +363,10 @@ function EditorToolbar({ editor }: { editor: Editor }) {
         label="Link"
         onClick={() => setLink(editor)}
       >
-        L
+        <EditorIcon name="link" />
       </ToolbarButton>
-      <ToolbarButton label="Imagem" onClick={() => insertImage(editor)}>
-        IMG
+      <ToolbarButton label="Imagem" onClick={onOpenImageDialog}>
+        <EditorIcon name="image" />
       </ToolbarButton>
     </div>
   )
@@ -272,6 +377,7 @@ export default function EditorClient({
   name = 'body'
 }: EditorClientProps) {
   const [content, setContent] = useState(initialContent)
+  const [isImageDialogOpen, setIsImageDialogOpen] = useState(false)
   const editor = useEditor({
     content: initialContent,
     editorProps: {
@@ -296,9 +402,20 @@ export default function EditorClient({
 
   return (
     <div className="tiptap-news-editor overflow-hidden rounded-md border border-[#f00018]/45 bg-[#050505] focus-within:border-[#ffcc00] focus-within:ring-2 focus-within:ring-[#ffcc00]/20">
-      <EditorToolbar editor={editor} />
+      <EditorToolbar
+        editor={editor}
+        onOpenImageDialog={() => setIsImageDialogOpen(true)}
+      />
       <EditorContent editor={editor} />
       <input name={name} type="hidden" value={content} />
+      <ImagePickerDialog
+        onClose={() => setIsImageDialogOpen(false)}
+        onInsert={(src) => {
+          editor.chain().focus().setImage({ src }).createParagraphNear().run()
+          setContent(editor.getHTML())
+        }}
+        open={isImageDialogOpen}
+      />
     </div>
   )
 }
