@@ -1,20 +1,101 @@
 import { NextResponse } from 'next/server'
-import { getSeedData, runSeed } from '@/lib/news-seed'
+import { hashPassword } from 'better-auth/crypto'
+import { db } from '@/lib/db'
+import { account, user } from '@/lib/db/schema'
+import { and, eq, inArray } from 'drizzle-orm'
+import { v7 as uuidv7 } from 'uuid'
 
-export async function GET() {
-  return NextResponse.json({
-    message: 'Seed atual carregado.',
-    data: getSeedData()
-  })
-}
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 export async function POST() {
-  const data = runSeed()
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD
+
+  if (!adminPassword || adminPassword.length < 8) {
+    return NextResponse.json(
+      {
+        message: 'Defina SEED_ADMIN_PASSWORD com pelo menos 8 caracteres antes de executar o seed.'
+      },
+      { status: 500 }
+    )
+  }
+
+  const admins = [
+    {
+      name: 'Silas Ladislau',
+      email: 'splhead@gmail.com',
+      emailVerified: true,
+      roles: ['admin']
+    },
+    {
+      name: 'Igor Pinho Barbosa',
+      email: 'igorjpinho@hotmail.com',
+      emailVerified: true,
+      roles: ['admin']
+    }
+  ]
+
+  const result = await db.transaction(async tx => {
+    const adminEmails = admins.map(admin => admin.email)
+    const adminsFound = await tx
+      .select()
+      .from(user)
+      .where(inArray(user.email, adminEmails))
+
+    const foundEmails = new Set(adminsFound.map(admin => admin.email))
+    const adminsToCreate = admins
+      .filter(admin => !foundEmails.has(admin.email))
+      .map(admin => ({
+        id: uuidv7(),
+        ...admin
+      }))
+
+    if (adminsToCreate.length > 0) {
+      await tx.insert(user).values(adminsToCreate)
+    }
+
+    const adminUsers = [...adminsFound, ...adminsToCreate]
+    const credentialAccounts = await tx
+      .select({ userId: account.userId })
+      .from(account)
+      .where(
+        and(
+          inArray(
+            account.userId,
+            adminUsers.map(admin => admin.id)
+          ),
+          eq(account.providerId, 'credential')
+        )
+      )
+
+    const userIdsWithCredential = new Set(credentialAccounts.map(account => account.userId))
+    const usersWithoutCredential = adminUsers.filter(admin => !userIdsWithCredential.has(admin.id))
+
+    if (usersWithoutCredential.length > 0) {
+      const credentialAccountsToCreate = await Promise.all(
+        usersWithoutCredential.map(async admin => ({
+          id: uuidv7(),
+          accountId: admin.id,
+          providerId: 'credential',
+          userId: admin.id,
+          password: await hashPassword(adminPassword)
+        }))
+      )
+
+      await tx.insert(account).values(credentialAccountsToCreate)
+    }
+
+    return {
+      adminsFound: adminsFound.length,
+      adminsCreated: adminsToCreate.length,
+      credentialAccountsCreated: usersWithoutCredential.length
+    }
+  })
 
   return NextResponse.json(
     {
       message: 'Seed executado com sucesso.',
-      data
+      ...result
     },
     { status: 201 }
   )

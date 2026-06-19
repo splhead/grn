@@ -61,7 +61,9 @@ export default function AdminOverviewPage() {
             </p>
             <div className="flex flex-wrap gap-3 text-sm text-[#ffcc00]">
               <span>{categoryNames(featuredArticle, categories)}</span>
-              <span>Publicada em {formatDate(featuredArticle.publishedAt)}</span>
+              <span>
+                Publicada em {formatDate(featuredArticle.publishedAt)}
+              </span>
               <span>Atualizada em {formatDate(featuredArticle.updatedAt)}</span>
             </div>
           </section>
@@ -76,7 +78,7 @@ export default function AdminOverviewPage() {
               </div>
             </div>
             <div className="grid gap-3.5">
-              {latestArticles.map((article) => (
+              {latestArticles.map(article => (
                 <article
                   key={article.id}
                   className="grid grid-cols-1 gap-4 border-b border-[#f00018]/35 pb-4 last:border-b-0 last:pb-0 sm:grid-cols-[140px_1fr]"
@@ -120,13 +122,13 @@ export default function AdminOverviewPage() {
             <span className={eyebrowClass}>Perfis</span>
             <h2 className="text-2xl font-black leading-tight">Permissoes</h2>
             <div className="mt-4 grid gap-3.5">
-              {(Object.keys(roleLabels) as Role[]).map((role) => (
+              {(Object.keys(roleLabels) as Role[]).map(role => (
                 <article
                   key={role}
                   className="grid gap-2 rounded-md border border-[#f00018]/35 bg-[#050505] p-3.5"
                 >
                   <strong className="block">{roleLabels[role]}</strong>
-                  {rolePermissions[role].map((permission) => (
+                  {rolePermissions[role].map(permission => (
                     <span className="text-sm text-zinc-400" key={permission}>
                       {permission}
                     </span>
@@ -150,7 +152,7 @@ export default function AdminOverviewPage() {
               </button>
             </div>
             <div className="grid gap-3.5">
-              {editorialUsers.map((user) => (
+              {editorialUsers.map(user => (
                 <article
                   key={user.id}
                   className="grid grid-cols-[42px_1fr] items-center gap-3 rounded-md border border-[#f00018]/35 bg-[#050505] p-3.5"
@@ -166,31 +168,6 @@ export default function AdminOverviewPage() {
                   </div>
                 </article>
               ))}
-            </div>
-          </section>
-
-          <section className={compactPanelClass}>
-            <span className={eyebrowClass}>Seed</span>
-            <h2 className="text-2xl font-black leading-tight">Dados iniciais</h2>
-            <p className="my-4 leading-normal text-zinc-300">
-              A rota <code>/api/seed</code> cria o administrador inicial e as
-              categorias editoriais.
-            </p>
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-              <a
-                className="inline-flex min-h-[42px] items-center justify-center rounded-md border border-[#f00018]/55 bg-[#0c0c0f] px-4 font-black uppercase text-white transition hover:bg-[#f00018]"
-                href="/api/seed"
-              >
-                Ver seed
-              </a>
-              <form action="/api/seed" method="post">
-                <button
-                  className="inline-flex min-h-[42px] w-full items-center justify-center rounded-md bg-[#ffcc00] px-4 font-black uppercase text-[#111114]"
-                  type="submit"
-                >
-                  Executar seed
-                </button>
-              </form>
             </div>
           </section>
         </aside>

@@ -30,7 +30,7 @@ export default function Header() {
           </p>
 
           <div className="grid gap-3">
-            <span className="rounded-md border border-white/20 bg-black/35 px-3 py-2 text-center text-sm text-white md:text-right">
+            <span className="px-3 py-2 text-center text-sm text-gray-400/50 md:text-right">
               Sexta-feira, 16 de maio de 2025
             </span>
             <form className="flex min-h-11 w-full overflow-hidden rounded-md border border-white/25 bg-white md:w-[320px]">
@@ -68,7 +68,7 @@ export default function Header() {
             <Link className="bg-[#f00018] px-4 py-4 text-white" href="/">
               Início
             </Link>
-            {menuItems.map((item) => (
+            {menuItems.map(item => (
               <Link
                 className="border-t border-white/10 px-4 py-4 text-white"
                 href={item.href}
@@ -90,7 +90,7 @@ export default function Header() {
           >
             ⌂
           </Link>
-          {menuItems.map((item) => (
+          {menuItems.map(item => (
             <Link
               className="flex-none px-[18px] py-6 text-white transition hover:bg-[#f00018] hover:text-white"
               href={item.href}

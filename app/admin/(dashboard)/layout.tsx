@@ -1,10 +1,19 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { eq } from 'drizzle-orm'
+import { db } from '@/lib/db'
+import { user as userTable } from '@/lib/db/schema'
+import { getSession } from '@/lib/server'
 
-const actionGroups = [
+const baseActionGroups = [
   {
     title: 'Gestão de notícias',
     actions: [
-      { href: '/admin', label: 'Todas as notícias', description: 'Lista editorial' },
+      {
+        href: '/admin',
+        label: 'Todas as notícias',
+        description: 'Lista editorial'
+      },
       {
         href: '/admin/noticias',
         label: 'Nova notícia',
@@ -21,7 +30,7 @@ const actionGroups = [
     title: 'Gestão de categorias',
     actions: [
       {
-        href: '/admin/noticias',
+        href: '/admin/categorias',
         label: 'Categorias',
         description: 'Criar e revisar editorias'
       },
@@ -31,29 +40,61 @@ const actionGroups = [
         description: 'Categorias vinculadas'
       }
     ]
-  },
-  {
-    title: 'Administração de usuário',
-    actions: [
-      {
-        href: '/admin/visao-geral',
-        label: 'Usuários',
-        description: 'Equipe e convites'
-      },
-      {
-        href: '/admin/visao-geral',
-        label: 'Permissões',
-        description: 'Perfis de acesso'
-      }
-    ]
   }
 ]
 
-export default function AdminDashboardLayout({
+const adminActionGroup = {
+  title: 'Administração de usuários',
+  actions: [
+    {
+      href: '/admin/usuarios',
+      label: 'Usuários',
+      description: 'Equipe e permissões'
+    },
+    {
+      href: '/admin/usuarios/novo',
+      label: 'Novo usuário',
+      description: 'Criar acesso'
+    }
+  ]
+}
+
+async function getCurrentUser(userId: string) {
+  const [currentUser] = await db
+    .select({
+      roles: userTable.roles
+    })
+    .from(userTable)
+    .where(eq(userTable.id, userId))
+    .limit(1)
+
+  return currentUser
+}
+
+function canManageUsers(roles: string[]) {
+  return roles.includes('admin')
+}
+
+function buildActionGroups(isAdmin: boolean) {
+  return isAdmin ? [...baseActionGroups, adminActionGroup] : baseActionGroups
+}
+
+export default async function AdminDashboardLayout({
   children
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const session = await getSession()
+
+  if (!session?.user) {
+    redirect('/login')
+  }
+
+  const currentUser = await getCurrentUser(session.user.id)
+  const isAdmin = canManageUsers(currentUser?.roles ?? [])
+  const actionGroups = buildActionGroups(isAdmin)
+  const userInitial = session.user.name?.slice(0, 1).toUpperCase() ?? 'A'
+
   return (
     <div className="grid min-h-full lg:grid-cols-[280px_minmax(0,1fr)]">
       <aside className="border-b border-[#f00018]/45 bg-[#050505]/95 px-4 py-4 shadow-[0_18px_45px_rgba(0,0,0,0.32)] lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r lg:px-5 lg:py-6">
@@ -82,14 +123,14 @@ export default function AdminDashboardLayout({
             </span>
             <div className="mt-3 flex items-center gap-3">
               <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#f00018] text-lg font-black text-white">
-                A
+                {userInitial}
               </span>
               <div className="min-w-0">
                 <strong className="block truncate text-white">
-                  Administrador
+                  {session.user.name}
                 </strong>
                 <small className="block truncate text-zinc-400">
-                  admin@giroradar.com.br
+                  {session.user.email}
                 </small>
               </div>
             </div>
@@ -109,7 +150,7 @@ export default function AdminDashboardLayout({
                   </span>
                 </summary>
                 <div className="grid gap-2 border-t border-[#f00018]/25 p-2">
-                  {group.actions.map((action) => (
+                  {group.actions.map(action => (
                     <Link
                       className="grid rounded-md border border-transparent bg-[#050505] px-3 py-3 text-white transition hover:border-[#ffcc00] hover:bg-[#171717]"
                       href={action.href}

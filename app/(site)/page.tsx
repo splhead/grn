@@ -80,7 +80,7 @@ const categories = [
 const cardClass =
   'rounded-[5px] border border-[#f00018]/45 bg-[#0c0c0f] p-5 text-white shadow-[0_18px_40px_rgba(0,0,0,0.35)]'
 const cardTitleClass =
-  'border-b-2 border-[#f00018] pb-2.5 text-2xl font-black italic uppercase text-[#ffcc00]'
+  'border-b-2 border-[#f00018] pb-2.5 text-2xl font-black italic uppercase text-[#ffcc00] mb-3'
 
 export default function Home() {
   return (
@@ -144,12 +144,14 @@ export default function Home() {
             </article>
           ))}
         </div>
-        <button
-          className="my-5 w-full rounded-[5px] border border-[#f00018] bg-[#f00018] p-4 font-black uppercase text-white shadow-[0_14px_30px_rgba(240,0,24,0.28)]"
-          type="button"
-        >
-          Ver mais notícias⌄
-        </button>
+        <div className="flex justify-end">
+          <button
+            className="my-5 w-full lg:w-64 rounded-[5px] border border-[#f00018] bg-[#f00018] p-4 font-black uppercase text-white shadow-[0_14px_30px_rgba(240,0,24,0.28)]"
+            type="button"
+          >
+            Ver mais notícias
+          </button>
+        </div>
       </section>
 
       <aside className="grid content-start gap-6.25">
@@ -176,7 +178,7 @@ export default function Home() {
           </a>
         </div>
 
-        <div className={cardClass}>
+        {/* <div className={cardClass}>
           <h2 className={cardTitleClass}>✉ Boletim Informativo</h2>
           <p>Receba as principais notícias no seu e-mail.</p>
           <input
@@ -189,7 +191,7 @@ export default function Home() {
           >
             Assinar
           </button>
-        </div>
+        </div> */}
 
         <div className={cardClass}>
           <h2 className={cardTitleClass}>Redes Sociais</h2>
@@ -213,17 +215,6 @@ export default function Home() {
               </button>
             </div>
           ))}
-        </div>
-
-        <div className={cardClass}>
-          <h2 className={cardTitleClass}>Área Administrativa</h2>
-          <p>Acesso restrito para editor, revisor e administrador.</p>
-          <Link
-            className="mt-4 flex min-h-10.5 w-full items-center justify-center rounded bg-[#ffcc00] px-4.5 font-black uppercase text-[#111114]"
-            href="/admin/login"
-          >
-            Acessar painel
-          </Link>
         </div>
       </aside>
     </main>

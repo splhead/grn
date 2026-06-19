@@ -1,18 +1,44 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { authClient } from '@/lib/auth-client'
 
 export default function AdminLoginPage() {
   const router = useRouter()
+  const [errorMessage, setErrorMessage] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    router.push('/admin')
+    setErrorMessage('')
+    setIsSubmitting(true)
+
+    const formData = new FormData(event.currentTarget)
+    const email = String(formData.get('email') ?? '')
+    const password = String(formData.get('password') ?? '')
+    const rememberMe = formData.get('remember') === 'on'
+
+    const { error } = await authClient.signIn.email({
+      email,
+      password,
+      rememberMe
+    })
+
+    setIsSubmitting(false)
+
+    if (error) {
+      setErrorMessage('E-mail ou senha inválidos.')
+      return
+    }
+
+    router.replace('/admin')
+    router.refresh()
   }
 
   return (
@@ -74,16 +100,22 @@ export default function AdminLoginPage() {
 
             <div className="flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
               <label className="flex items-center gap-2 font-bold text-zinc-300">
-                <Checkbox name="remember" />
+                <Checkbox defaultChecked name="remember" />
                 Manter conectado
               </label>
-              <Link className="font-black text-[#ffcc00]" href="/admin/login">
+              <Link className="font-black text-[#ffcc00]" href="/login">
                 Esqueci minha senha
               </Link>
             </div>
 
-            <Button className="w-full" type="submit">
-              Entrar
+            {errorMessage ? (
+              <p className="rounded-md border border-[#f00018]/45 bg-[#f00018]/10 px-4 py-3 text-sm font-bold text-red-100">
+                {errorMessage}
+              </p>
+            ) : null}
+
+            <Button className="w-full" disabled={isSubmitting} type="submit">
+              {isSubmitting ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>
         </div>
