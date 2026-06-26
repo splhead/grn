@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { hashPassword } from 'better-auth/crypto'
+import { revalidateCategoriesCache } from '@/lib/categories-cache'
 import { db } from '@/lib/db'
 import { account, categoriesTable, user } from '@/lib/db/schema'
 import { seedData } from '@/lib/news-seed'
@@ -104,6 +105,8 @@ export async function POST() {
       categoriesSeeded: seedData.categories.length
     }
   })
+
+  revalidateCategoriesCache()
 
   return NextResponse.json(
     {

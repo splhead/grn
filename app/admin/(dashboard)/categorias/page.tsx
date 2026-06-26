@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { eyebrowClass, panelClass } from '@/lib/admin/ui'
+import { revalidateCategoriesCache } from '@/lib/categories-cache'
 import { db } from '@/lib/db'
 import { categoriesTable, user as userTable } from '@/lib/db/schema'
 import { getSession } from '@/lib/server'
@@ -73,6 +74,7 @@ async function createCategory(formData: FormData) {
     description: description || null
   })
 
+  revalidateCategoriesCache()
   revalidatePath('/admin/categorias')
   redirect('/admin/categorias?sucesso=criada')
 }
@@ -114,6 +116,7 @@ async function updateCategory(formData: FormData) {
     })
     .where(eq(categoriesTable.id, categoryId))
 
+  revalidateCategoriesCache()
   revalidatePath('/admin/categorias')
   redirect('/admin/categorias?sucesso=atualizada')
 }
@@ -131,6 +134,7 @@ async function deleteCategory(formData: FormData) {
 
   await db.delete(categoriesTable).where(eq(categoriesTable.id, categoryId))
 
+  revalidateCategoriesCache()
   revalidatePath('/admin/categorias')
   redirect('/admin/categorias?sucesso=excluida')
 }

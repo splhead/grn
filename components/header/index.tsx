@@ -1,20 +1,31 @@
 import Link from 'next/link'
+import { getMenuCategories } from '@/lib/categories-cache'
 import Logo from '../logo'
 
-const menuItems = [
-  { href: '/', label: 'Notícias' },
-  { href: '/#cidades', label: 'Cidades⌄' },
-  { href: '/#policia', label: 'Polícia' },
-  { href: '/#politica', label: 'Política' },
-  { href: '/#economia', label: 'Economia' },
-  { href: '/#agro', label: 'Agro' },
-  { href: '/#meio-ambiente', label: 'Meio Ambiente' },
-  { href: '/#educacao', label: 'Educação' },
-  { href: '/#saude', label: 'Saúde' },
-  { href: '/#turismo', label: 'Turismo' }
-]
+const VISIBLE_CATEGORY_COUNT = 8
 
-export default function Header() {
+async function getMenuItems() {
+  const categories = await getMenuCategories()
+
+  return [
+    { href: '/noticias', id: 'all-news', label: 'Notícias' },
+    ...categories.map(category => ({
+      href: `/noticias?categoria=${category.slug}`,
+      id: category.id,
+      label: category.name
+    }))
+  ]
+}
+
+export default async function Header() {
+  const menuItems = await getMenuItems()
+  const [allNewsItem, ...categoryItems] = menuItems
+  const visibleMenuItems = [
+    allNewsItem,
+    ...categoryItems.slice(0, VISIBLE_CATEGORY_COUNT)
+  ]
+  const extraMenuItems = categoryItems.slice(VISIBLE_CATEGORY_COUNT)
+
   return (
     <header>
       <div className="grid gap-5 border-b border-[#f00018]/50 bg-[linear-gradient(135deg,#050505_0%,#111114_58%,#3a0508_100%)] px-4 py-5 text-white shadow-[0_16px_44px_rgba(0,0,0,0.45)] sm:px-6 md:grid-cols-[auto_minmax(0,1fr)] md:items-center md:px-8 lg:px-[60px]">
@@ -33,10 +44,14 @@ export default function Header() {
             <span className="px-3 py-2 text-center text-sm text-gray-400/50 md:text-right">
               Sexta-feira, 16 de maio de 2025
             </span>
-            <form className="flex min-h-11 w-full overflow-hidden rounded-md border border-white/25 bg-white md:w-[320px]">
+            <form
+              action="/noticias"
+              className="flex min-h-11 w-full overflow-hidden rounded-md border border-white/25 bg-white md:w-[320px]"
+            >
               <input
                 aria-label="Buscar notícias"
                 className="min-w-0 flex-1 border-0 px-3 font-bold text-[#111114] outline-0"
+                name="busca"
                 placeholder="Buscar notícias..."
               />
               <button
@@ -68,38 +83,72 @@ export default function Header() {
             <Link className="bg-[#f00018] px-4 py-4 text-white" href="/">
               Início
             </Link>
-            {menuItems.map(item => (
+            {visibleMenuItems.map(item => (
               <Link
                 className="border-t border-white/10 px-4 py-4 text-white"
                 href={item.href}
-                key={item.href}
+                key={item.id}
               >
                 {item.label}
               </Link>
             ))}
-            <a className="border-t border-white/10 px-4 py-4 text-[#ffcc00]">
-              Mais⌄
-            </a>
+            {extraMenuItems.length > 0 ? (
+              <details className="group border-t border-white/10">
+                <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-4 text-[#ffcc00] [&::-webkit-details-marker]:hidden">
+                  <span>Mais</span>
+                  <span className="group-open:hidden">⌄</span>
+                  <span className="hidden group-open:block">⌃</span>
+                </summary>
+                <div className="grid border-t border-white/10 bg-[#050505]">
+                  {extraMenuItems.map(item => (
+                    <Link
+                      className="border-t border-white/10 px-6 py-4 text-white"
+                      href={item.href}
+                      key={item.id}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              </details>
+            ) : null}
           </nav>
         </details>
 
-        <nav className="hidden min-h-[66px] items-center overflow-x-auto md:flex">
+        <nav className="mx-auto hidden min-h-[66px] max-w-[1250px] flex-wrap items-stretch overflow-visible px-5 md:flex">
           <Link
-            className="flex-none bg-[#f00018] px-7 py-5 text-2xl text-white"
+            className="flex items-center bg-[#f00018] px-7 py-5 text-2xl text-white"
             href="/"
           >
             ⌂
           </Link>
-          {menuItems.map(item => (
+          {visibleMenuItems.map(item => (
             <Link
-              className="flex-none px-[18px] py-6 text-white transition hover:bg-[#f00018] hover:text-white"
+              className="flex items-center whitespace-nowrap px-[18px] py-5 text-white transition hover:bg-[#f00018] hover:text-white"
               href={item.href}
-              key={item.href}
+              key={item.id}
             >
               {item.label}
             </Link>
           ))}
-          <a className="flex-none px-[18px] py-6 text-[#ffcc00]">Mais⌄</a>
+          {extraMenuItems.length > 0 ? (
+            <details className="group relative flex">
+              <summary className="flex cursor-pointer list-none items-center whitespace-nowrap px-[18px] py-5 text-[#ffcc00] transition hover:bg-[#f00018] hover:text-white [&::-webkit-details-marker]:hidden">
+                Mais⌄
+              </summary>
+              <div className="absolute left-0 top-full z-20 hidden min-w-56 border border-[#f00018]/50 bg-[#08080a] shadow-[0_18px_36px_rgba(0,0,0,0.45)] group-open:grid">
+                {extraMenuItems.map(item => (
+                  <Link
+                    className="border-b border-white/10 px-4 py-3 text-white transition last:border-b-0 hover:bg-[#f00018]"
+                    href={item.href}
+                    key={item.id}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </details>
+          ) : null}
         </nav>
       </div>
     </header>
