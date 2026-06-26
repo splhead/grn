@@ -86,7 +86,10 @@ export default function Home() {
   return (
     <main className="mx-auto grid max-w-[1250px] grid-cols-1 gap-[25px] px-5 py-7 lg:grid-cols-[1fr_400px]">
       <section>
-        <article className="relative h-[460px] overflow-hidden rounded border border-[#f00018]/45 bg-black text-white shadow-[0_24px_60px_rgba(0,0,0,0.5)] lg:h-[545px]">
+        <Link
+          className="relative block h-[460px] overflow-hidden rounded border border-[#f00018]/45 bg-black text-white shadow-[0_24px_60px_rgba(0,0,0,0.5)] lg:h-[545px]"
+          href="/noticias/porto-velho-tera-nova-orla-turistica-no-rio-madeira"
+        >
           <img
             alt=""
             className="absolute inset-0 h-full w-full object-cover"
@@ -106,7 +109,7 @@ export default function Home() {
             </p>
             <div>▣ 16 de maio de 2025 &nbsp;&nbsp; ◉ 3 min de leitura</div>
           </div>
-        </article>
+        </Link>
 
         <div className="my-[25px] grid grid-cols-1 rounded border border-[#f00018]/45 bg-[#0c0c0f] text-white md:grid-cols-3 lg:grid-cols-6">
           {categories.map(([icon, label]) => (

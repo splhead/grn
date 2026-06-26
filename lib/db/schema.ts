@@ -13,7 +13,14 @@ import { v7 as uuidv7 } from 'uuid'
 export const newsStatusEnum = pgEnum('news_status', [
   'draft',
   'review',
-  'published'
+  'published',
+  'archived'
+])
+
+export const newsPlacementEnum = pgEnum('news_placement', [
+  'main_cover',
+  'highlights',
+  'latest'
 ])
 
 export const user = pgTable('user', {
@@ -94,6 +101,7 @@ export const newsTable = pgTable('news', {
   subtitle: text('subtitle'),
   slug: text('slug').unique(),
   coverImage: text('cover_image'),
+  placement: newsPlacementEnum('placement').default('latest').notNull(),
   publishedAt: timestamp('published_at', { withTimezone: true }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at')

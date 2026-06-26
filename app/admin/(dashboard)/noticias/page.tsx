@@ -1,15 +1,43 @@
+import { asc } from 'drizzle-orm'
+import CategoryTagsInput from '@/components/category-tags-input'
 import ImagePickerInput from '@/components/image-picker-input'
 import NewsBodyEditor from '@/components/news-body-editor'
 import PublicationDatePicker from '@/components/publication-date-picker'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { seedData } from '@/lib/news-seed'
 import { eyebrowClass, panelClass } from '@/lib/admin/ui'
+import { db } from '@/lib/db'
+import { categoriesTable } from '@/lib/db/schema'
 
-export default function AdminPage() {
-  const categories = seedData.categories
+export const dynamic = 'force-dynamic'
+
+export default async function AdminPage() {
+  const categories = await db
+    .select({
+      id: categoriesTable.id,
+      name: categoriesTable.name,
+      slug: categoriesTable.slug
+    })
+    .from(categoriesTable)
+    .orderBy(asc(categoriesTable.name))
+  const placementOptions = [
+    {
+      value: 'main_cover',
+      title: 'Capa principal',
+      description: 'Chamada maior da home, reservada para a noticia do dia.'
+    },
+    {
+      value: 'highlights',
+      title: 'Destaques',
+      description: 'Lista lateral de noticias com prioridade editorial.'
+    },
+    {
+      value: 'latest',
+      title: 'Ultimas noticias',
+      description: 'Fluxo padrao da home por ordem de publicacao.'
+    }
+  ]
 
   return (
     <main className="mx-auto grid w-full max-w-[1280px] gap-6 px-6 pt-7">
@@ -52,6 +80,33 @@ export default function AdminPage() {
               Imagem de capa
               <ImagePickerInput name="coverImage" />
             </Label>
+            <fieldset className="grid gap-3 rounded-md border border-[#f00018]/45 p-4 text-sm font-extrabold text-zinc-200">
+              <legend className="px-2">Area de destaque</legend>
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+                {placementOptions.map(option => (
+                  <label
+                    className="grid min-h-[122px] cursor-pointer gap-2 rounded-md border border-[#f00018]/35 bg-[#050505] p-4 transition has-[:checked]:border-[#ffcc00] has-[:checked]:bg-[#171204]"
+                    key={option.value}
+                  >
+                    <span className="flex items-center gap-3">
+                      <input
+                        className="h-4 w-4 accent-[#ffcc00]"
+                        defaultChecked={option.value === 'latest'}
+                        name="placement"
+                        type="radio"
+                        value={option.value}
+                      />
+                      <span className="font-black text-white">
+                        {option.title}
+                      </span>
+                    </span>
+                    <span className="text-sm font-normal leading-normal text-zinc-400">
+                      {option.description}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Label>
                 Data de publicacao
@@ -63,17 +118,12 @@ export default function AdminPage() {
             </div>
             <fieldset className="grid gap-3 rounded-md border border-[#f00018]/45 p-4 text-sm font-extrabold text-zinc-200">
               <legend className="px-2">Categorias</legend>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                {categories.map(category => (
-                  <label
-                    className="flex min-h-12 items-center gap-3 rounded-md border border-[#f00018]/35 bg-[#050505] p-3 font-bold"
-                    key={category.id}
-                  >
-                    <Checkbox defaultChecked={category.slug === 'cidades'} />
-                    {category.name}
-                  </label>
-                ))}
-              </div>
+              <CategoryTagsInput
+                categories={categories}
+                defaultSelectedIds={categories
+                  .filter(category => category.slug === 'cidades')
+                  .map(category => category.id)}
+              />
             </fieldset>
             <div className="grid gap-2 text-sm text-zinc-200">
               <span className="font-extrabold">Corpo da noticia</span>

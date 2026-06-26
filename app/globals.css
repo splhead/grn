@@ -54,4 +54,46 @@
   .tiptap-news-editor .tiptap-news-content hr {
     @apply my-6 border-0 border-t border-[#f00018]/45;
   }
+
+  .news-article-body {
+    @apply max-w-[850px] text-zinc-100;
+  }
+
+  .news-article-body h2 {
+    @apply mb-4 mt-8 text-3xl font-black italic leading-tight text-[#ffcc00];
+  }
+
+  .news-article-body h3 {
+    @apply mb-3 mt-7 text-2xl font-black text-[#ffcc00];
+  }
+
+  .news-article-body p,
+  .news-article-body li {
+    @apply my-5 text-[1.125rem] leading-[1.85] text-zinc-100;
+  }
+
+  .news-article-body a {
+    @apply font-bold text-[#ffcc00] underline underline-offset-4;
+  }
+
+  .news-article-body blockquote {
+    @apply my-7 border-l-4 border-[#f00018] bg-[#0c0c0f] p-5 text-xl font-bold italic text-zinc-200;
+  }
+
+  .news-article-body img {
+    @apply my-7 block max-h-[520px] w-full rounded-md object-cover;
+  }
+
+  .news-article-body ul,
+  .news-article-body ol {
+    @apply my-5 pl-8;
+  }
+
+  .news-article-body ul {
+    @apply list-disc;
+  }
+
+  .news-article-body ol {
+    @apply list-decimal;
+  }
 }

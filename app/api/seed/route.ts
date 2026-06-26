@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import { hashPassword } from 'better-auth/crypto'
 import { db } from '@/lib/db'
-import { account, user } from '@/lib/db/schema'
-import { and, eq, inArray } from 'drizzle-orm'
+import { account, categoriesTable, user } from '@/lib/db/schema'
+import { seedData } from '@/lib/news-seed'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 import { v7 as uuidv7 } from 'uuid'
 
 export const runtime = 'nodejs'
@@ -85,10 +86,22 @@ export async function POST() {
       await tx.insert(account).values(credentialAccountsToCreate)
     }
 
+    await tx
+      .insert(categoriesTable)
+      .values(seedData.categories)
+      .onConflictDoUpdate({
+        target: categoriesTable.slug,
+        set: {
+          name: sql`excluded.name`,
+          description: sql`excluded.description`
+        }
+      })
+
     return {
       adminsFound: adminsFound.length,
       adminsCreated: adminsToCreate.length,
-      credentialAccountsCreated: usersWithoutCredential.length
+      credentialAccountsCreated: usersWithoutCredential.length,
+      categoriesSeeded: seedData.categories.length
     }
   })
 

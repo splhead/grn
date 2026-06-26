@@ -20,12 +20,13 @@ export type NewsArticle = {
   title: string
   subtitle: string
   coverImage?: string
+  placement: 'main_cover' | 'highlights' | 'latest'
   publishedAt: string
   updatedAt: string
   categories: string[]
   body: string
   authorId: string
-  status: 'draft' | 'review' | 'published'
+  status: 'draft' | 'review' | 'published' | 'archived'
 }
 
 export type SeedData = {
@@ -90,6 +91,7 @@ export const seedData: SeedData = {
         'Projeto vai requalificar a orla e ampliar opcoes de lazer, turismo e economia criativa.',
       coverImage:
         'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80',
+      placement: 'main_cover',
       publishedAt: '2026-06-08T09:00:00-04:00',
       updatedAt: '2026-06-08T11:30:00-04:00',
       categories: ['cat-cidades', 'cat-economia'],
@@ -105,6 +107,7 @@ export const seedData: SeedData = {
         'Unidades de saude e equipes volantes atendem bairros com maior procura nesta semana.',
       coverImage:
         'https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=900&q=80',
+      placement: 'latest',
       publishedAt: '2026-06-07T15:00:00-04:00',
       updatedAt: '2026-06-07T15:00:00-04:00',
       categories: ['cat-saude', 'cat-cidades'],
@@ -120,6 +123,7 @@ export const seedData: SeedData = {
         'Cooperativas registram aumento de demanda e planejam investir em qualidade do grao.',
       coverImage:
         'https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=900&q=80',
+      placement: 'highlights',
       publishedAt: '2026-06-06T08:20:00-04:00',
       updatedAt: '2026-06-06T10:45:00-04:00',
       categories: ['cat-agro', 'cat-economia'],

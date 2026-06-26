@@ -1,0 +1,1 @@
+ALTER TYPE "public"."news_status" ADD VALUE 'archived';

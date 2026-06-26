@@ -208,7 +208,7 @@ export default async function AdminCategoriesPage({
           Categorias
         </h1>
         <p className="mt-2 text-sm text-zinc-300">
-          Cadastre editorias, ajuste slugs e exclua categorias fora de uso.
+          Cadastre categorias, ajuste slugs e exclua categorias fora de uso.
         </p>
       </div>
 
@@ -227,7 +227,7 @@ export default async function AdminCategoriesPage({
       <section className={panelClass}>
         <div className="mb-5">
           <span className={eyebrowClass}>Nova categoria</span>
-          <h2 className="text-2xl font-black leading-tight">Criar editoria</h2>
+          <h2 className="text-2xl font-black leading-tight">Criar categoria</h2>
         </div>
 
         <form action={createCategory} className="grid gap-5">

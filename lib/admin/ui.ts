@@ -44,7 +44,7 @@ export const fieldClass = 'grid gap-2 text-sm font-extrabold text-zinc-200'
 export const inputClass =
   'min-h-12 min-w-0 rounded-md border border-[#f00018]/45 bg-[#050505] px-3.5 py-3 text-base text-white outline-none focus:border-[#ffcc00] focus:ring-2 focus:ring-[#ffcc00]/20'
 export const statusClass =
-  'inline-flex flex-none rounded-full px-2.5 py-1.5 text-xs font-black uppercase'
+  'inline-flex flex-none whitespace-nowrap rounded-full px-2.5 py-1.5 text-xs font-black uppercase'
 
 export function formatDate(date: string) {
   return new Intl.DateTimeFormat('pt-BR', {

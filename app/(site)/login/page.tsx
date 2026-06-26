@@ -13,6 +13,8 @@ export default function AdminLoginPage() {
   const router = useRouter()
   const [errorMessage, setErrorMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false)
+  const [rememberMe, setRememberMe] = useState(true)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -22,8 +24,6 @@ export default function AdminLoginPage() {
     const formData = new FormData(event.currentTarget)
     const email = String(formData.get('email') ?? '')
     const password = String(formData.get('password') ?? '')
-    const rememberMe = formData.get('remember') === 'on'
-
     const { error } = await authClient.signIn.email({
       email,
       password,
@@ -88,19 +88,61 @@ export default function AdminLoginPage() {
 
             <Label>
               Senha
-              <Input
-                autoComplete="current-password"
-                minLength={6}
-                name="password"
-                placeholder="Digite sua senha"
-                required
-                type="password"
-              />
+              <span className="flex min-h-12 overflow-hidden rounded-md border border-[#f00018]/45 bg-[#050505] transition focus-within:border-[#ffcc00] focus-within:ring-2 focus-within:ring-[#ffcc00]/20">
+                <input
+                  autoComplete="current-password"
+                  className="min-w-0 flex-1 border-0 bg-transparent px-3.5 py-3 text-base text-white outline-none placeholder:text-zinc-500"
+                  minLength={6}
+                  name="password"
+                  placeholder="Digite sua senha"
+                  required
+                  type={isPasswordVisible ? 'text' : 'password'}
+                />
+                <button
+                  aria-label={
+                    isPasswordVisible ? 'Ocultar senha' : 'Mostrar senha'
+                  }
+                  aria-pressed={isPasswordVisible}
+                  className="flex w-12 flex-none items-center justify-center border-l border-[#f00018]/35 text-zinc-300 transition hover:bg-[#171717] hover:text-[#ffcc00]"
+                  onClick={() =>
+                    setIsPasswordVisible(currentValue => !currentValue)
+                  }
+                  type="button"
+                >
+                  {isPasswordVisible ? (
+                    <svg
+                      aria-hidden="true"
+                      className="h-5 w-5"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        d="M3.3 2.3 21.7 20.7l-1.4 1.4-3.1-3.1A12.3 12.3 0 0 1 12 20C5.8 20 2.4 14.7 2.2 14.4a4.4 4.4 0 0 1 0-4.8 16 16 0 0 1 3-3.2L1.9 3.7l1.4-1.4Zm6.1 8.5a3 3 0 0 0 3.8 3.8l-3.8-3.8Zm2.6 7.2a10.6 10.6 0 0 0 3.6-.6l-1.8-1.8a5 5 0 0 1-6.4-6.4L6.7 7.9a13 13 0 0 0-2.8 2.8 2.4 2.4 0 0 0 0 2.6C4.4 14 7.1 18 12 18Zm9.8-7.6a4.4 4.4 0 0 1 0 4.1 13.3 13.3 0 0 1-1.7 2.1l-1.4-1.4a11 11 0 0 0 1.4-1.8 2.4 2.4 0 0 0 0-2.6C19.6 10 16.9 6 12 6a10.2 10.2 0 0 0-2.6.3L7.8 4.7A12.2 12.2 0 0 1 12 4c6.2 0 9.6 5.3 9.8 5.6v.8Zm-9.1-1.3a3 3 0 0 1 2.2 2.2l-2.2-2.2Z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      aria-hidden="true"
+                      className="h-5 w-5"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        d="M12 4c6.2 0 9.6 5.3 9.8 5.6a4.4 4.4 0 0 1 0 4.8C21.6 14.7 18.2 20 12 20S2.4 14.7 2.2 14.4a4.4 4.4 0 0 1 0-4.8C2.4 9.3 5.8 4 12 4Zm0 2c-5 0-7.6 4-8.1 4.7a2.4 2.4 0 0 0 0 2.6C4.4 14 7 18 12 18s7.6-4 8.1-4.7a2.4 2.4 0 0 0 0-2.6C19.6 10 17 6 12 6Zm0 3a3 3 0 1 1 0 6 3 3 0 0 1 0-6Zm0 2a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                  )}
+                </button>
+              </span>
             </Label>
 
             <div className="flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
               <label className="flex items-center gap-2 font-bold text-zinc-300">
-                <Checkbox defaultChecked name="remember" />
+                <Checkbox
+                  checked={rememberMe}
+                  name="remember"
+                  onChange={event => setRememberMe(event.target.checked)}
+                />
                 Manter conectado
               </label>
               <Link className="font-black text-[#ffcc00]" href="/login">

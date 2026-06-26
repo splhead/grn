@@ -1,5 +1,9 @@
+import { revalidatePath } from 'next/cache'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { newsTable } from '@/lib/db/schema'
+import { db } from '@/lib/db'
 import { seedData, type NewsArticle } from '@/lib/news-seed'
 import {
   categoryNames,
@@ -8,6 +12,7 @@ import {
   panelClass,
   statusClass
 } from '@/lib/admin/ui'
+import { eq } from 'drizzle-orm'
 
 type NewsListPageProps = {
   searchParams?: Promise<{
@@ -17,20 +22,69 @@ type NewsListPageProps = {
 
 const pageSize = 6
 
+async function archiveNews(formData: FormData) {
+  'use server'
+
+  const articleId = String(formData.get('articleId') ?? '')
+
+  if (!articleId) {
+    return
+  }
+
+  await db
+    .update(newsTable)
+    .set({
+      status: 'archived',
+      updatedAt: new Date()
+    })
+    .where(eq(newsTable.id, articleId))
+
+  revalidatePath('/admin')
+  revalidatePath('/')
+}
+
+async function restoreNews(formData: FormData) {
+  'use server'
+
+  const articleId = String(formData.get('articleId') ?? '')
+
+  if (!articleId) {
+    return
+  }
+
+  await db
+    .update(newsTable)
+    .set({
+      status: 'draft',
+      updatedAt: new Date()
+    })
+    .where(eq(newsTable.id, articleId))
+
+  revalidatePath('/admin')
+  redirect('/admin')
+}
+
 const statusLabels: Record<NewsArticle['status'], string> = {
   draft: 'Rascunho',
   review: 'Em revisão',
-  published: 'Publicado'
+  published: 'Publicado',
+  archived: 'Arquivada'
 }
 
 const statusStyles: Record<NewsArticle['status'], string> = {
   draft: 'bg-zinc-800 text-zinc-300',
   review: 'bg-[#ffcc00] text-[#111114]',
-  published: 'bg-green-500 text-white'
+  published: 'bg-green-500 text-white',
+  archived: 'bg-zinc-700 text-zinc-100'
 }
 
 function buildNewsList() {
-  const statusCycle: NewsArticle['status'][] = ['published', 'review', 'draft']
+  const statusCycle: NewsArticle['status'][] = [
+    'published',
+    'review',
+    'draft',
+    'archived'
+  ]
 
   return Array.from({ length: 18 }, (_, index) => {
     const source = seedData.articles[index % seedData.articles.length]
@@ -126,10 +180,33 @@ export default async function NewsListPage({
                       <Button size="sm" type="button" variant="outline">
                         Editar
                       </Button>
+                      {article.status === 'archived' ? null : (
+                        <form action={archiveNews}>
+                          <input
+                            name="articleId"
+                            type="hidden"
+                            value={article.id}
+                          />
+                          <Button size="sm" type="submit" variant="outline">
+                            Arquivar
+                          </Button>
+                        </form>
+                      )}
                       {article.status === 'published' ? (
                         <Button size="sm" type="button" variant="outline">
                           Ver
                         </Button>
+                      ) : article.status === 'archived' ? (
+                        <form action={restoreNews}>
+                          <input
+                            name="articleId"
+                            type="hidden"
+                            value={article.id}
+                          />
+                          <Button size="sm" type="submit" variant="success">
+                            Restaurar
+                          </Button>
+                        </form>
                       ) : (
                         <Button size="sm" type="button" variant="success">
                           Publicar
@@ -168,10 +245,25 @@ export default async function NewsListPage({
                 <Button size="sm" type="button" variant="outline">
                   Editar
                 </Button>
+                {article.status === 'archived' ? null : (
+                  <form action={archiveNews}>
+                    <input name="articleId" type="hidden" value={article.id} />
+                    <Button size="sm" type="submit" variant="outline">
+                      Arquivar
+                    </Button>
+                  </form>
+                )}
                 {article.status === 'published' ? (
                   <Button size="sm" type="button" variant="outline">
                     Ver
                   </Button>
+                ) : article.status === 'archived' ? (
+                  <form action={restoreNews}>
+                    <input name="articleId" type="hidden" value={article.id} />
+                    <Button size="sm" type="submit" variant="success">
+                      Restaurar
+                    </Button>
+                  </form>
                 ) : (
                   <Button size="sm" type="button" variant="success">
                     Publicar
