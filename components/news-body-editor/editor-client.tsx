@@ -11,6 +11,7 @@ import { useState, type ReactNode } from 'react'
 type EditorClientProps = {
   initialContent: string
   name?: string
+  placeholder?: string
 }
 
 type ToolbarButtonProps = {
@@ -374,9 +375,11 @@ function EditorToolbar({
 
 export default function EditorClient({
   initialContent,
-  name = 'body'
+  name = 'body',
+  placeholder = 'Escreva o corpo da noticia...'
 }: EditorClientProps) {
   const [content, setContent] = useState(initialContent)
+  const [isEmpty, setIsEmpty] = useState(true)
   const [isImageDialogOpen, setIsImageDialogOpen] = useState(false)
   const editor = useEditor({
     content: initialContent,
@@ -389,6 +392,7 @@ export default function EditorClient({
     immediatelyRender: false,
     onUpdate: ({ editor: currentEditor }) => {
       setContent(currentEditor.getHTML())
+      setIsEmpty(currentEditor.isEmpty)
     }
   })
 
@@ -406,7 +410,14 @@ export default function EditorClient({
         editor={editor}
         onOpenImageDialog={() => setIsImageDialogOpen(true)}
       />
-      <EditorContent editor={editor} />
+      <div className="relative">
+        <EditorContent editor={editor} />
+        {isEmpty ? (
+          <div className="pointer-events-none absolute left-5 top-5 max-w-[720px] text-[1.0625rem] leading-[1.8] text-zinc-500">
+            {placeholder}
+          </div>
+        ) : null}
+      </div>
       <input name={name} type="hidden" value={content} />
       <ImagePickerDialog
         onClose={() => setIsImageDialogOpen(false)}

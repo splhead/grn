@@ -53,8 +53,10 @@ export function ImagePickerDialog({
 }: ImagePickerDialogProps) {
   const [url, setUrl] = useState('')
   const [imageSrc, setImageSrc] = useState('')
+  const [imageFile, setImageFile] = useState<File | null>(null)
   const [fileName, setFileName] = useState('')
   const [isDragging, setIsDragging] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState('')
 
   if (!open) {
@@ -64,7 +66,9 @@ export function ImagePickerDialog({
   function resetDialog() {
     setUrl('')
     setImageSrc('')
+    setImageFile(null)
     setFileName('')
+    setIsUploading(false)
     setError('')
     setIsDragging(false)
   }
@@ -84,6 +88,7 @@ export function ImagePickerDialog({
 
     reader.onload = () => {
       setImageSrc(String(reader.result || ''))
+      setImageFile(file)
       setFileName(file.name)
       setError('')
     }
@@ -114,21 +119,54 @@ export function ImagePickerDialog({
     }
   }
 
-  function handleInsert() {
-    const src = imageSrc || url.trim()
+  async function uploadImage(file: File) {
+    const uploadFormData = new FormData()
 
-    if (!src) {
+    uploadFormData.set('file', file)
+
+    const response = await fetch('/api/cloudinary/upload', {
+      body: uploadFormData,
+      method: 'POST'
+    })
+    const result = await response.json()
+
+    if (!response.ok) {
+      throw new Error(result?.error ?? 'Nao foi possivel enviar a imagem.')
+    }
+
+    return String(result.url)
+  }
+
+  async function handleInsert() {
+    const trimmedUrl = url.trim()
+
+    if (!imageFile && !trimmedUrl) {
       setError('Informe uma URL ou selecione uma imagem.')
       return
     }
 
-    onInsert(src)
-    resetDialog()
-    onClose()
+    try {
+      setIsUploading(true)
+      setError('')
+
+      const src = imageFile ? await uploadImage(imageFile) : trimmedUrl
+
+      onInsert(src)
+      resetDialog()
+      onClose()
+    } catch (uploadError) {
+      setError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : 'Nao foi possivel enviar a imagem.'
+      )
+      setIsUploading(false)
+    }
   }
 
   function clearFile() {
     setImageSrc('')
+    setImageFile(null)
     setFileName('')
     setError('')
   }
@@ -144,7 +182,7 @@ export function ImagePickerDialog({
         onKeyDown={(event: KeyboardEvent<HTMLDivElement>) => {
           if (event.key === 'Enter' && event.target instanceof HTMLInputElement) {
             event.preventDefault()
-            handleInsert()
+            void handleInsert()
           }
         }}
       >
@@ -155,6 +193,7 @@ export function ImagePickerDialog({
           <button
             aria-label="Fechar"
             className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-transparent text-zinc-400 transition hover:border-[#f00018]/45 hover:bg-[#171717] hover:text-white"
+            disabled={isUploading}
             onClick={handleClose}
             type="button"
           >
@@ -167,6 +206,7 @@ export function ImagePickerDialog({
             URL da imagem
             <input
               className="h-11 rounded-md border border-[#f00018]/35 bg-[#050505] px-3 text-sm font-semibold normal-case text-white outline-none transition placeholder:text-zinc-600 focus:border-[#ffcc00] focus:ring-2 focus:ring-[#ffcc00]/20"
+              disabled={isUploading}
               inputMode="url"
               onChange={(event) => {
                 setUrl(event.target.value)
@@ -194,6 +234,7 @@ export function ImagePickerDialog({
             <input
               accept="image/*"
               className="sr-only"
+              disabled={isUploading}
               onChange={handleFileChange}
               type="file"
             />
@@ -222,6 +263,7 @@ export function ImagePickerDialog({
                 <span className="text-xs font-bold text-zinc-400">{fileName}</span>
                 <button
                   className="rounded-md border border-[#f00018]/45 px-3 py-2 text-xs font-black uppercase text-zinc-300 transition hover:bg-[#171717] hover:text-white"
+                  disabled={isUploading}
                   onClick={clearFile}
                   type="button"
                 >
@@ -237,6 +279,7 @@ export function ImagePickerDialog({
         <div className="flex flex-wrap justify-end gap-2 border-t border-[#f00018]/35 px-5 py-4">
           <button
             className="rounded-md border border-[#f00018]/45 px-4 py-2 text-sm font-black uppercase text-zinc-300 transition hover:bg-[#171717] hover:text-white"
+            disabled={isUploading}
             onClick={handleClose}
             type="button"
           >
@@ -244,10 +287,11 @@ export function ImagePickerDialog({
           </button>
           <button
             className="rounded-md border border-[#ffcc00] bg-[#ffcc00] px-4 py-2 text-sm font-black uppercase text-[#111114] transition hover:brightness-110"
-            onClick={handleInsert}
+            disabled={isUploading}
+            onClick={() => void handleInsert()}
             type="button"
           >
-            Inserir imagem
+            {isUploading ? 'Enviando...' : 'Inserir imagem'}
           </button>
         </div>
       </div>

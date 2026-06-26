@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 type NewsBodyEditorProps = {
   initialContent: string
   name?: string
+  placeholder?: string
 }
 
 const EditorClient = dynamic(() => import('./editor-client'), {

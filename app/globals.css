@@ -27,7 +27,7 @@
   }
 
   .tiptap-news-editor .tiptap-news-content img {
-    @apply my-5 block max-h-[520px] max-w-full rounded-md object-cover;
+    @apply my-5 block h-auto max-w-full rounded-md;
   }
 
   .tiptap-news-editor .tiptap-news-content ul,
@@ -81,7 +81,7 @@
   }
 
   .news-article-body img {
-    @apply my-7 block max-h-[520px] w-full rounded-md object-cover;
+    @apply my-7 block h-auto max-w-full rounded-md;
   }
 
   .news-article-body ul,
