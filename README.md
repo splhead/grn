@@ -2,6 +2,13 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+Create a `.env.local` file with the values from `.env.example`, then apply
+the database migrations:
+
+```bash
+pnpm db:migrate
+```
+
 First, run the development server:
 
 ```bash
