@@ -1,6 +1,14 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { and, desc, eq, ne } from 'drizzle-orm'
+import { db } from '@/lib/db'
+import {
+  categoriesTable,
+  newsCategoriesTable,
+  newsTable,
+  user as userTable
+} from '@/lib/db/schema'
 import {
   createNewsSlug,
   getArticleAuthor,
@@ -8,10 +16,14 @@ import {
   getArticleCategories,
   getPublishedArticles
 } from '@/lib/news'
+import { getSession } from '@/lib/server'
 
 type NewsDetailPageProps = {
   params: Promise<{
     slug: string
+  }>
+  searchParams?: Promise<{
+    preview?: string
   }>
 }
 
@@ -32,6 +44,68 @@ function getReadingTime(html: string) {
   const words = plainText ? plainText.split(/\s+/).length : 0
 
   return Math.max(1, Math.ceil(words / 220))
+}
+
+async function getDbArticle(slug: string, previewId?: string) {
+  const canPreview = Boolean(previewId && (await getSession())?.user)
+  const [article] = await db
+    .select({
+      authorName: userTable.name,
+      body: newsTable.body,
+      coverImage: newsTable.coverImage,
+      id: newsTable.id,
+      publishedAt: newsTable.publishedAt,
+      slug: newsTable.slug,
+      status: newsTable.status,
+      subtitle: newsTable.subtitle,
+      title: newsTable.title
+    })
+    .from(newsTable)
+    .leftJoin(userTable, eq(newsTable.authorId, userTable.id))
+    .where(
+      canPreview
+        ? and(eq(newsTable.id, previewId as string), eq(newsTable.slug, slug))
+        : and(eq(newsTable.slug, slug), eq(newsTable.status, 'published'))
+    )
+    .limit(1)
+
+  if (!article) {
+    return null
+  }
+
+  const categories = await db
+    .select({
+      id: categoriesTable.id,
+      name: categoriesTable.name,
+      slug: categoriesTable.slug
+    })
+    .from(newsCategoriesTable)
+    .innerJoin(
+      categoriesTable,
+      eq(newsCategoriesTable.categoryId, categoriesTable.id)
+    )
+    .where(eq(newsCategoriesTable.newsId, article.id))
+  const relatedArticles = await db
+    .select({
+      id: newsTable.id,
+      publishedAt: newsTable.publishedAt,
+      slug: newsTable.slug,
+      title: newsTable.title
+    })
+    .from(newsTable)
+    .where(and(eq(newsTable.status, 'published'), ne(newsTable.id, article.id)))
+    .orderBy(desc(newsTable.publishedAt), desc(newsTable.updatedAt))
+    .limit(3)
+
+  return {
+    ...article,
+    body: article.body ?? '',
+    categories,
+    coverImage: article.coverImage ?? '',
+    publishedAt: article.publishedAt ?? new Date(),
+    relatedArticles,
+    subtitle: article.subtitle ?? ''
+  }
 }
 
 function WhatsAppIcon() {
@@ -88,7 +162,8 @@ export async function generateMetadata({
   params
 }: NewsDetailPageProps): Promise<Metadata> {
   const { slug } = await params
-  const article = getArticleBySlug(slug)
+  const dbArticle = await getDbArticle(slug)
+  const article = dbArticle ?? getArticleBySlug(slug)
 
   if (!article) {
     return {
@@ -114,22 +189,34 @@ export async function generateMetadata({
   }
 }
 
-export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
+export default async function NewsDetailPage({
+  params,
+  searchParams
+}: NewsDetailPageProps) {
   const { slug } = await params
-  const article = getArticleBySlug(slug)
+  const query = await searchParams
+  const dbArticle = await getDbArticle(slug, query?.preview)
+  const seedArticle = dbArticle ? null : getArticleBySlug(slug)
+  const article = dbArticle ?? seedArticle
 
   if (!article) {
     notFound()
   }
 
-  const categories = getArticleCategories(article.categories)
-  const author = getArticleAuthor(article.authorId)
+  const categories = dbArticle
+    ? dbArticle.categories
+    : getArticleCategories(seedArticle?.categories ?? [])
+  const author = dbArticle
+    ? { name: dbArticle.authorName ?? 'Redacao Giro Radar' }
+    : getArticleAuthor(seedArticle?.authorId ?? '')
   const articleUrl = `${siteUrl}/noticias/${slug}`
   const encodedUrl = encodeURIComponent(articleUrl)
   const encodedTitle = encodeURIComponent(article.title)
-  const relatedArticles = getPublishedArticles()
-    .filter(relatedArticle => relatedArticle.id !== article.id)
-    .slice(0, 3)
+  const relatedArticles = dbArticle
+    ? dbArticle.relatedArticles
+    : getPublishedArticles()
+        .filter(relatedArticle => relatedArticle.id !== article.id)
+        .slice(0, 3)
 
   const shareLinks = [
     {
@@ -227,12 +314,14 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
             {relatedArticles.map(relatedArticle => (
               <Link
                 className="grid gap-2 border-b border-[#f00018]/35 py-4"
-                href={`/noticias/${createNewsSlug(relatedArticle.title)}`}
+                href={`/noticias/${'slug' in relatedArticle && relatedArticle.slug ? relatedArticle.slug : createNewsSlug(relatedArticle.title)}`}
                 key={relatedArticle.id}
               >
                 <b className="text-lg leading-tight">{relatedArticle.title}</b>
                 <small className="font-bold text-[#ffcc00]">
-                  {dateFormatter.format(new Date(relatedArticle.publishedAt))}
+                  {dateFormatter.format(
+                    new Date(relatedArticle.publishedAt ?? article.publishedAt ?? 0)
+                  )}
                 </small>
               </Link>
             ))}

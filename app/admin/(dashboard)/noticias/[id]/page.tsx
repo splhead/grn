@@ -1,11 +1,18 @@
+import { notFound } from 'next/navigation'
+import { eq } from 'drizzle-orm'
 import { eyebrowClass, panelClass } from '@/lib/admin/ui'
 import { getCachedCategories } from '@/lib/categories-cache'
-import { createNews } from './actions'
-import NewsForm from './news-form'
+import { db } from '@/lib/db'
+import { newsCategoriesTable, newsTable } from '@/lib/db/schema'
+import { updateNews } from '../actions'
+import NewsForm from '../news-form'
 
 export const dynamic = 'force-dynamic'
 
-type AdminPageProps = {
+type EditNewsPageProps = {
+  params: Promise<{
+    id: string
+  }>
   searchParams?: Promise<{
     erro?: string
     sucesso?: string
@@ -34,27 +41,49 @@ function getFeedbackMessage(feedback?: string, error?: string) {
     }
   }
 
-  if (feedback === 'publicada') {
+  if (feedback === 'atualizada') {
     return {
       tone: 'success',
-      text: 'Noticia publicada com sucesso.'
-    }
-  }
-
-  if (feedback === 'rascunho') {
-    return {
-      tone: 'success',
-      text: 'Rascunho salvo com sucesso.'
+      text: 'Noticia atualizada com sucesso.'
     }
   }
 
   return null
 }
 
-export default async function AdminPage({ searchParams }: AdminPageProps) {
-  const params = await searchParams
-  const feedback = getFeedbackMessage(params?.sucesso, params?.erro)
+export default async function EditNewsPage({
+  params,
+  searchParams
+}: EditNewsPageProps) {
+  const { id } = await params
+  const query = await searchParams
+  const feedback = getFeedbackMessage(query?.sucesso, query?.erro)
+  const [article] = await db
+    .select({
+      body: newsTable.body,
+      coverImage: newsTable.coverImage,
+      id: newsTable.id,
+      placement: newsTable.placement,
+      publishedAt: newsTable.publishedAt,
+      slug: newsTable.slug,
+      subtitle: newsTable.subtitle,
+      title: newsTable.title
+    })
+    .from(newsTable)
+    .where(eq(newsTable.id, id))
+    .limit(1)
+
+  if (!article) {
+    notFound()
+  }
+
   const categories = await getCachedCategories()
+  const selectedCategories = await db
+    .select({
+      categoryId: newsCategoriesTable.categoryId
+    })
+    .from(newsCategoriesTable)
+    .where(eq(newsCategoriesTable.newsId, id))
 
   return (
     <main className="mx-auto grid w-full max-w-[1280px] gap-6 px-6 pt-7">
@@ -62,7 +91,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         <div>
           <span className={eyebrowClass}>Painel administrativo</span>
           <h1 className="text-3xl font-black italic leading-tight text-white">
-            Redação e categorias
+            Editar notícia
           </h1>
         </div>
       </div>
@@ -80,7 +109,17 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
               {feedback.text}
             </div>
           ) : null}
-          <NewsForm action={createNews} categories={categories} mode="create" />
+          <NewsForm
+            action={updateNews}
+            categories={categories}
+            mode="edit"
+            values={{
+              ...article,
+              categoryIds: selectedCategories.map(
+                category => category.categoryId
+              )
+            }}
+          />
         </section>
       </section>
     </main>

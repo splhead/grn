@@ -1,72 +1,25 @@
 import Link from 'next/link'
+import { MainNewsCarousel } from '@/components/main-news-carousel'
+import { desc, eq, inArray } from 'drizzle-orm'
+import { db } from '@/lib/db'
+import {
+  categoriesTable,
+  newsCategoriesTable,
+  newsTable
+} from '@/lib/db/schema'
+import { createNewsSlug } from '@/lib/news'
 
-const news = [
-  {
-    image:
-      'https://images.unsplash.com/photo-1604580864964-0462f5d5b1a8?auto=format&fit=crop&w=300&q=80',
-    title: 'ALE-RO aprova projetos que beneficiam a população',
-    summary: 'Propostas incluem áreas da saúde, educação e infraestrutura.',
-    meta: '16 de maio de 2025 • 2 min'
-  },
-  {
-    image:
-      'https://images.unsplash.com/photo-1604580864964-0462f5d5b1a8?auto=format&fit=crop&w=300&q=80',
-    title: 'Operação da PM combate criminalidade em Rondônia',
-    summary:
-      'Ação foi realizada em vários bairros da capital e interior do estado.',
-    meta: '16 de maio de 2025 • 2 min'
-  },
-  {
-    image:
-      'https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&w=300&q=80',
-    title: 'Gasolina tem queda de preço em Rondônia nesta semana',
-    summary: 'Levantamento aponta redução média nos postos de combustíveis.',
-    meta: '16 de maio de 2025 • 2 min'
-  },
-  {
-    image:
-      'https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?auto=format&fit=crop&w=300&q=80',
-    title: 'Rondônia intensifica combate ao desmatamento ilegal',
-    summary: 'Operações integradas reforçam a fiscalização em áreas críticas.',
-    meta: '15 de maio de 2025 • 3 min'
-  },
-  {
-    image:
-      'https://images.unsplash.com/photo-1573164713988-8665fc963095?auto=format&fit=crop&w=300&q=80',
-    title: 'Governo de RO lança programa de valorização dos professores',
-    summary:
-      'Iniciativa prevê capacitação e novos incentivos para profissionais.',
-    meta: '15 de maio de 2025 • 2 min'
-  },
-  {
-    image:
-      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=300&q=80',
-    title: 'Obras na RO-010 avançam e beneficiam população',
-    summary: 'Trecho que liga municípios recebe investimento em pavimentação.',
-    meta: '15 de maio de 2025 • 2 min'
-  }
-]
+const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
+  dateStyle: 'long',
+  timeZone: 'America/Manaus'
+})
 
-const highlights = [
-  {
-    image:
-      'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=160&q=80',
-    title: 'Polícia prende suspeito de roubo em Porto Velho',
-    meta: 'há 32 minutos'
-  },
-  {
-    image:
-      'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&w=160&q=80',
-    title: 'Governo anuncia novos investimentos para Rondônia',
-    meta: 'há 1 hora'
-  },
-  {
-    image:
-      'https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=160&q=80',
-    title: 'Produtores de café comemoram alta na exportação',
-    meta: 'há 2 horas'
-  }
-]
+function getReadingTime(html: string) {
+  const plainText = html.replace(/<[^>]+>/g, ' ').trim()
+  const words = plainText ? plainText.split(/\s+/).length : 0
+
+  return Math.max(1, Math.ceil(words / 220))
+}
 
 const categories = [
   ['🛡️', 'Polícia'],
@@ -81,35 +34,139 @@ const cardClass =
   'rounded-[5px] border border-[#f00018]/45 bg-[#0c0c0f] p-5 text-white shadow-[0_18px_40px_rgba(0,0,0,0.35)]'
 const cardTitleClass =
   'border-b-2 border-[#f00018] pb-2.5 text-2xl font-black italic uppercase text-[#ffcc00] mb-3'
+const defaultArticleImage =
+  'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1100&q=80'
 
-export default function Home() {
+export const dynamic = 'force-dynamic'
+
+async function getHomepageContent() {
+  const publishedArticles = await db
+    .select({
+      body: newsTable.body,
+      coverImage: newsTable.coverImage,
+      id: newsTable.id,
+      placement: newsTable.placement,
+      publishedAt: newsTable.publishedAt,
+      slug: newsTable.slug,
+      subtitle: newsTable.subtitle,
+      title: newsTable.title,
+      updatedAt: newsTable.updatedAt
+    })
+    .from(newsTable)
+    .where(eq(newsTable.status, 'published'))
+    .orderBy(desc(newsTable.publishedAt), desc(newsTable.updatedAt))
+    .limit(40)
+
+  const mainCoverArticles = publishedArticles.filter(
+    article => article.placement === 'main_cover'
+  )
+  const remainingSlots = Math.max(0, 7 - mainCoverArticles.length)
+  const fallbackArticles = publishedArticles
+    .filter(article => article.placement !== 'main_cover')
+    .slice(0, remainingSlots)
+
+  const articles = [...mainCoverArticles, ...fallbackArticles]
+  const articleIds = articles.map(article => article.id)
+  const categoryRows =
+    articleIds.length > 0
+      ? await db
+          .select({
+            categoryName: categoriesTable.name,
+            newsId: newsCategoriesTable.newsId
+          })
+          .from(newsCategoriesTable)
+          .innerJoin(
+            categoriesTable,
+            eq(newsCategoriesTable.categoryId, categoriesTable.id)
+          )
+          .where(inArray(newsCategoriesTable.newsId, articleIds))
+      : []
+  const categoryByArticleId = new Map<string, string>()
+
+  categoryRows.forEach(row => {
+    if (!categoryByArticleId.has(row.newsId)) {
+      categoryByArticleId.set(row.newsId, row.categoryName)
+    }
+  })
+
+  const mainArticles = articles.slice(0, 7).map(article => ({
+    ...article,
+    body: article.body ?? '',
+    category: categoryByArticleId.get(article.id) ?? 'Notícias',
+    publishedAt: article.publishedAt ?? article.updatedAt,
+    slug: article.slug ?? createNewsSlug(article.title),
+    subtitle: article.subtitle ?? ''
+  }))
+
+  const highlights = publishedArticles
+    .filter(article => article.placement === 'highlights')
+    .slice(0, 4)
+    .map(article => ({
+      href: `/noticias/${article.slug ?? createNewsSlug(article.title)}`,
+      image: article.coverImage ?? defaultArticleImage,
+      meta: dateFormatter.format(article.publishedAt ?? article.updatedAt),
+      title: article.title
+    }))
+
+  const latestNews = publishedArticles
+    .filter(article => article.placement === 'latest')
+    .slice(0, 6)
+    .map(article => ({
+      href: `/noticias/${article.slug ?? createNewsSlug(article.title)}`,
+      image: article.coverImage ?? defaultArticleImage,
+      meta: `${dateFormatter.format(
+        article.publishedAt ?? article.updatedAt
+      )} • ${getReadingTime(article.body ?? '')} min`,
+      summary: article.subtitle ?? '',
+      title: article.title
+    }))
+
+  return {
+    highlights,
+    latestNews,
+    mainArticles
+  }
+}
+
+function EmptyNewsSection({
+  className = '',
+  placementName
+}: {
+  className?: string
+  placementName: string
+}) {
+  return (
+    <div
+      className={`rounded border border-[#f00018]/45 bg-[#0c0c0f] p-8 text-center text-white ${className}`}
+    >
+      <h3 className="text-xl font-black text-[#ffcc00]">
+        Ainda não existem notícias cadastradas
+      </h3>
+      <p className="mt-2 text-sm font-semibold text-zinc-300">
+        Publique uma notícia na área de destaque {placementName} para ela
+        aparecer nesta seção.
+      </p>
+    </div>
+  )
+}
+
+export default async function Home() {
+  const { highlights, latestNews, mainArticles } = await getHomepageContent()
+  const mainNews = mainArticles.map(article => {
+    return {
+      href: `/noticias/${article.slug}`,
+      image: article.coverImage ?? defaultArticleImage,
+      title: article.title,
+      summary: article.subtitle,
+      category: article.category,
+      meta: `▣ ${dateFormatter.format(new Date(article.publishedAt))}   ◉ ${getReadingTime(article.body)} min de leitura`
+    }
+  })
+
   return (
     <main className="mx-auto grid max-w-[1250px] grid-cols-1 gap-[25px] px-5 py-7 lg:grid-cols-[1fr_400px]">
       <section>
-        <Link
-          className="relative block h-[460px] overflow-hidden rounded border border-[#f00018]/45 bg-black text-white shadow-[0_24px_60px_rgba(0,0,0,0.5)] lg:h-[545px]"
-          href="/noticias/porto-velho-tera-nova-orla-turistica-no-rio-madeira"
-        >
-          <img
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover"
-            src="https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1100&q=80"
-          />
-          <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(0,0,0,0.78),rgba(20,0,3,0.58),rgba(0,0,0,0.92))]" />
-          <span className="absolute left-8 top-9 rounded bg-[#f00018] px-[18px] py-2 font-black uppercase">
-            Cidades
-          </span>
-          <div className="absolute bottom-6 left-6 right-8">
-            <h1 className="mb-3 max-w-[680px] text-[32px] font-black italic leading-[1.05] text-[#ffcc00] lg:text-[42px]">
-              Porto Velho terá nova orla turística no rio Madeira
-            </h1>
-            <p className="mb-5 max-w-[720px] text-xl font-bold lg:text-[22px]">
-              Projeto vai requalificar a orla, promover turismo, lazer e
-              desenvolvimento econômico para a capital.
-            </p>
-            <div>▣ 16 de maio de 2025 &nbsp;&nbsp; ◉ 3 min de leitura</div>
-          </div>
-        </Link>
+        <MainNewsCarousel items={mainNews} />
 
         <div className="my-[25px] grid grid-cols-1 rounded border border-[#f00018]/45 bg-[#0c0c0f] text-white md:grid-cols-3 lg:grid-cols-6">
           {categories.map(([icon, label]) => (
@@ -127,58 +184,80 @@ export default function Home() {
 
         <h2 className={cardTitleClass}>Últimas Notícias</h2>
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          {news.map(item => (
-            <article
-              className="grid grid-cols-1 gap-3.5 border-b border-[#f00018]/35 pb-4 text-white sm:grid-cols-[130px_1fr]"
-              key={item.title}
+          {latestNews.length > 0 ? (
+            latestNews.map(item => (
+              <Link
+                className="grid grid-cols-1 gap-3.5 border-b border-[#f00018]/35 pb-4 text-white sm:grid-cols-[130px_1fr]"
+                href={item.href}
+                key={item.href}
+              >
+                <img
+                  alt=""
+                  className="h-[125px] w-full rounded-[5px] object-cover"
+                  src={item.image}
+                />
+                <div>
+                  <h3 className="mb-2 text-xl font-black">{item.title}</h3>
+                  <p className="mb-2 text-zinc-300">{item.summary}</p>
+                  <small className="mt-2 block font-bold text-[#ffcc00]">
+                    {item.meta}
+                  </small>
+                </div>
+              </Link>
+            ))
+          ) : (
+            <EmptyNewsSection
+              className="md:col-span-2"
+              placementName="Últimas notícias"
+            />
+          )}
+        </div>
+        {latestNews.length > 0 ? (
+          <div className="flex justify-end">
+            <Link
+              className="my-5 w-full lg:w-64 rounded-[5px] border border-[#f00018] bg-[#f00018] p-4 font-black uppercase text-white shadow-[0_14px_30px_rgba(240,0,24,0.28)]"
+              href="/noticias"
             >
-              <img
-                alt=""
-                className="h-[125px] w-full rounded-[5px] object-cover"
-                src={item.image}
-              />
-              <div>
-                <h3 className="mb-2 text-xl font-black">{item.title}</h3>
-                <p className="mb-2 text-zinc-300">{item.summary}</p>
-                <small className="mt-2 block font-bold text-[#ffcc00]">
-                  {item.meta}
-                </small>
-              </div>
-            </article>
-          ))}
-        </div>
-        <div className="flex justify-end">
-          <button
-            className="my-5 w-full lg:w-64 rounded-[5px] border border-[#f00018] bg-[#f00018] p-4 font-black uppercase text-white shadow-[0_14px_30px_rgba(240,0,24,0.28)]"
-            type="button"
-          >
-            Ver mais notícias
-          </button>
-        </div>
+              Ver mais notícias
+            </Link>
+          </div>
+        ) : null}
       </section>
 
       <aside className="grid content-start gap-6.25">
         <div className={cardClass}>
           <h2 className={cardTitleClass}>Destaques</h2>
-          {highlights.map(item => (
-            <div
-              className="grid grid-cols-[115px_1fr] gap-3.5 border-b border-[#f00018]/35 py-3.25"
-              key={item.title}
-            >
-              <img
-                alt=""
-                className="h-[125px] w-full rounded-[5px] object-cover"
-                src={item.image}
-              />
-              <p>
-                <b className="text-[17px]">{item.title}</b>
-                <small className="mt-2 block text-[#ffcc00]">{item.meta}</small>
-              </p>
-            </div>
-          ))}
-          <a className="mt-5 block text-center font-black uppercase text-[#ffcc00]">
-            Ver todas as notícias →
-          </a>
+          {highlights.length > 0 ? (
+            <>
+              {highlights.map(item => (
+                <Link
+                  className="grid grid-cols-[115px_1fr] gap-3.5 border-b border-[#f00018]/35 py-3.25"
+                  href={item.href}
+                  key={item.href}
+                >
+                  <img
+                    alt=""
+                    className="h-[125px] w-full rounded-[5px] object-cover"
+                    src={item.image}
+                  />
+                  <p>
+                    <b className="text-[17px]">{item.title}</b>
+                    <small className="mt-2 block text-[#ffcc00]">
+                      {item.meta}
+                    </small>
+                  </p>
+                </Link>
+              ))}
+              <Link
+                className="mt-5 block text-center font-black uppercase text-[#ffcc00]"
+                href="/noticias"
+              >
+                Ver todas as notícias →
+              </Link>
+            </>
+          ) : (
+            <EmptyNewsSection placementName="Destaques" />
+          )}
         </div>
 
         {/* <div className={cardClass}>
