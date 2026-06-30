@@ -37,6 +37,25 @@ const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
 
 export const revalidate = 300
 
+function getValidDate(value: Date | string | number | null | undefined) {
+  if (!value) {
+    return null
+  }
+
+  const date = value instanceof Date ? value : new Date(value)
+
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+function formatArticleDate(
+  publishedAt: Date | string | number | null | undefined,
+  updatedAt: Date | string | number | null | undefined
+) {
+  const date = getValidDate(publishedAt) ?? getValidDate(updatedAt)
+
+  return date ? dateFormatter.format(date) : 'Data não informada'
+}
+
 function getValidPage(value?: string) {
   const page = Number(value)
 
@@ -354,8 +373,9 @@ export default async function NewsListPage({
                       </p>
                     ) : null}
                     <small className="font-bold text-[#ffcc00]">
-                      {dateFormatter.format(
-                        article.publishedAt ?? article.updatedAt
+                      {formatArticleDate(
+                        article.publishedAt,
+                        article.updatedAt
                       )}
                     </small>
                   </div>

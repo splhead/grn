@@ -12,16 +12,32 @@ import {
   newsTable
 } from '@/lib/db/schema'
 import { createNewsSlug } from '@/lib/news'
-import {
-  HOMEPAGE_NEWS_CACHE_TAG,
-  NEWS_CACHE_TAG
-} from '@/lib/news-cache'
+import { HOMEPAGE_NEWS_CACHE_TAG, NEWS_CACHE_TAG } from '@/lib/news-cache'
 import { shouldShowNewsAd } from '@/lib/ad-placement'
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
   dateStyle: 'long',
   timeZone: 'America/Manaus'
 })
+
+function getValidDate(value: Date | string | number | null | undefined) {
+  if (!value) {
+    return null
+  }
+
+  const date = value instanceof Date ? value : new Date(value)
+
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+function formatArticleDate(
+  publishedAt: Date | string | number | null | undefined,
+  updatedAt?: Date | string | number | null
+) {
+  const date = getValidDate(publishedAt) ?? getValidDate(updatedAt)
+
+  return date ? dateFormatter.format(date) : 'Data não informada'
+}
 
 function getReadingTime(html: string) {
   const plainText = html.replace(/<[^>]+>/g, ' ').trim()
@@ -48,97 +64,102 @@ const defaultArticleImage =
 
 export const revalidate = 300
 
-const getHomepageContent = unstable_cache(async () => {
-  const publishedArticles = await db
-    .select({
-      body: newsTable.body,
-      coverImage: newsTable.coverImage,
-      id: newsTable.id,
-      placement: newsTable.placement,
-      publishedAt: newsTable.publishedAt,
-      slug: newsTable.slug,
-      subtitle: newsTable.subtitle,
-      title: newsTable.title,
-      updatedAt: newsTable.updatedAt
+const getHomepageContent = unstable_cache(
+  async () => {
+    const publishedArticles = await db
+      .select({
+        body: newsTable.body,
+        coverImage: newsTable.coverImage,
+        id: newsTable.id,
+        placement: newsTable.placement,
+        publishedAt: newsTable.publishedAt,
+        slug: newsTable.slug,
+        subtitle: newsTable.subtitle,
+        title: newsTable.title,
+        updatedAt: newsTable.updatedAt
+      })
+      .from(newsTable)
+      .where(eq(newsTable.status, 'published'))
+      .orderBy(desc(newsTable.publishedAt), desc(newsTable.updatedAt))
+      .limit(40)
+
+    const mainCoverArticles = publishedArticles.filter(
+      article => article.placement === 'main_cover'
+    )
+    const remainingSlots = Math.max(0, 7 - mainCoverArticles.length)
+    const fallbackArticles = publishedArticles
+      .filter(article => article.placement !== 'main_cover')
+      .slice(0, remainingSlots)
+
+    const articles = [...mainCoverArticles, ...fallbackArticles]
+    const articleIds = articles.map(article => article.id)
+    const categoryRows =
+      articleIds.length > 0
+        ? await db
+            .select({
+              categoryName: categoriesTable.name,
+              newsId: newsCategoriesTable.newsId
+            })
+            .from(newsCategoriesTable)
+            .innerJoin(
+              categoriesTable,
+              eq(newsCategoriesTable.categoryId, categoriesTable.id)
+            )
+            .where(inArray(newsCategoriesTable.newsId, articleIds))
+        : []
+    const categoryByArticleId = new Map<string, string>()
+
+    categoryRows.forEach(row => {
+      if (!categoryByArticleId.has(row.newsId)) {
+        categoryByArticleId.set(row.newsId, row.categoryName)
+      }
     })
-    .from(newsTable)
-    .where(eq(newsTable.status, 'published'))
-    .orderBy(desc(newsTable.publishedAt), desc(newsTable.updatedAt))
-    .limit(40)
 
-  const mainCoverArticles = publishedArticles.filter(
-    article => article.placement === 'main_cover'
-  )
-  const remainingSlots = Math.max(0, 7 - mainCoverArticles.length)
-  const fallbackArticles = publishedArticles
-    .filter(article => article.placement !== 'main_cover')
-    .slice(0, remainingSlots)
+    const mainArticles = articles.slice(0, 7).map(article => ({
+      ...article,
+      body: article.body ?? '',
+      category: categoryByArticleId.get(article.id) ?? 'Notícias',
+      publishedAt: article.publishedAt ?? article.updatedAt,
+      slug: article.slug ?? createNewsSlug(article.title),
+      subtitle: article.subtitle ?? ''
+    }))
 
-  const articles = [...mainCoverArticles, ...fallbackArticles]
-  const articleIds = articles.map(article => article.id)
-  const categoryRows =
-    articleIds.length > 0
-      ? await db
-          .select({
-            categoryName: categoriesTable.name,
-            newsId: newsCategoriesTable.newsId
-          })
-          .from(newsCategoriesTable)
-          .innerJoin(
-            categoriesTable,
-            eq(newsCategoriesTable.categoryId, categoriesTable.id)
-          )
-          .where(inArray(newsCategoriesTable.newsId, articleIds))
-      : []
-  const categoryByArticleId = new Map<string, string>()
+    const highlights = publishedArticles
+      .filter(article => article.placement === 'highlights')
+      .slice(0, 4)
+      .map(article => ({
+        href: `/noticias/${article.slug ?? createNewsSlug(article.title)}`,
+        image: article.coverImage ?? defaultArticleImage,
+        meta: formatArticleDate(article.publishedAt, article.updatedAt),
+        title: article.title
+      }))
 
-  categoryRows.forEach(row => {
-    if (!categoryByArticleId.has(row.newsId)) {
-      categoryByArticleId.set(row.newsId, row.categoryName)
+    const latestNews = publishedArticles
+      .filter(article => article.placement === 'latest')
+      .slice(0, 6)
+      .map(article => ({
+        href: `/noticias/${article.slug ?? createNewsSlug(article.title)}`,
+        image: article.coverImage ?? defaultArticleImage,
+        meta: `${formatArticleDate(
+          article.publishedAt,
+          article.updatedAt
+        )} • ${getReadingTime(article.body ?? '')} min`,
+        summary: article.subtitle ?? '',
+        title: article.title
+      }))
+
+    return {
+      highlights,
+      latestNews,
+      mainArticles
     }
-  })
-
-  const mainArticles = articles.slice(0, 7).map(article => ({
-    ...article,
-    body: article.body ?? '',
-    category: categoryByArticleId.get(article.id) ?? 'Notícias',
-    publishedAt: article.publishedAt ?? article.updatedAt,
-    slug: article.slug ?? createNewsSlug(article.title),
-    subtitle: article.subtitle ?? ''
-  }))
-
-  const highlights = publishedArticles
-    .filter(article => article.placement === 'highlights')
-    .slice(0, 4)
-    .map(article => ({
-      href: `/noticias/${article.slug ?? createNewsSlug(article.title)}`,
-      image: article.coverImage ?? defaultArticleImage,
-      meta: dateFormatter.format(article.publishedAt ?? article.updatedAt),
-      title: article.title
-    }))
-
-  const latestNews = publishedArticles
-    .filter(article => article.placement === 'latest')
-    .slice(0, 6)
-    .map(article => ({
-      href: `/noticias/${article.slug ?? createNewsSlug(article.title)}`,
-      image: article.coverImage ?? defaultArticleImage,
-      meta: `${dateFormatter.format(
-        article.publishedAt ?? article.updatedAt
-      )} • ${getReadingTime(article.body ?? '')} min`,
-      summary: article.subtitle ?? '',
-      title: article.title
-    }))
-
-  return {
-    highlights,
-    latestNews,
-    mainArticles
+  },
+  ['homepage-content'],
+  {
+    revalidate: 300,
+    tags: [NEWS_CACHE_TAG, HOMEPAGE_NEWS_CACHE_TAG]
   }
-}, ['homepage-content'], {
-  revalidate: 300,
-  tags: [NEWS_CACHE_TAG, HOMEPAGE_NEWS_CACHE_TAG]
-})
+)
 
 function EmptyNewsSection({
   className = '',
@@ -171,7 +192,7 @@ export default async function Home() {
       title: article.title,
       summary: article.subtitle,
       category: article.category,
-      meta: `▣ ${dateFormatter.format(new Date(article.publishedAt))}   ◉ ${getReadingTime(article.body)} min de leitura`
+      meta: `▣ ${formatArticleDate(article.publishedAt)}   ◉ ${getReadingTime(article.body)} min de leitura`
     }
   })
 
@@ -214,7 +235,9 @@ export default async function Home() {
                   </span>
                   <div>
                     <h3 className="mb-2 text-xl font-black">{item.title}</h3>
-                    <p className="mb-2 text-zinc-300">{item.summary}</p>
+                    <p className="mb-2 text-zinc-300 line-clamp-4">
+                      {item.summary}
+                    </p>
                     <small className="mt-2 block font-bold text-[#ffcc00]">
                       {item.meta}
                     </small>
