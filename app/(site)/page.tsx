@@ -1,5 +1,9 @@
 import Link from 'next/link'
+import Image from 'next/image'
+import { unstable_cache } from 'next/cache'
+import { Fragment } from 'react'
 import { MainNewsCarousel } from '@/components/main-news-carousel'
+import { GoogleAdsenseAd } from '@/components/google-adsense-ad'
 import { desc, eq, inArray } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import {
@@ -8,6 +12,11 @@ import {
   newsTable
 } from '@/lib/db/schema'
 import { createNewsSlug } from '@/lib/news'
+import {
+  HOMEPAGE_NEWS_CACHE_TAG,
+  NEWS_CACHE_TAG
+} from '@/lib/news-cache'
+import { shouldShowNewsAd } from '@/lib/ad-placement'
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
   dateStyle: 'long',
@@ -37,9 +46,9 @@ const cardTitleClass =
 const defaultArticleImage =
   'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1100&q=80'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 300
 
-async function getHomepageContent() {
+const getHomepageContent = unstable_cache(async () => {
   const publishedArticles = await db
     .select({
       body: newsTable.body,
@@ -126,7 +135,10 @@ async function getHomepageContent() {
     latestNews,
     mainArticles
   }
-}
+}, ['homepage-content'], {
+  revalidate: 300,
+  tags: [NEWS_CACHE_TAG, HOMEPAGE_NEWS_CACHE_TAG]
+})
 
 function EmptyNewsSection({
   className = '',
@@ -185,25 +197,37 @@ export default async function Home() {
         <h2 className={cardTitleClass}>Últimas Notícias</h2>
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           {latestNews.length > 0 ? (
-            latestNews.map(item => (
-              <Link
-                className="grid grid-cols-1 gap-3.5 border-b border-[#f00018]/35 pb-4 text-white sm:grid-cols-[130px_1fr]"
-                href={item.href}
-                key={item.href}
-              >
-                <img
-                  alt=""
-                  className="h-[125px] w-full rounded-[5px] object-cover"
-                  src={item.image}
-                />
-                <div>
-                  <h3 className="mb-2 text-xl font-black">{item.title}</h3>
-                  <p className="mb-2 text-zinc-300">{item.summary}</p>
-                  <small className="mt-2 block font-bold text-[#ffcc00]">
-                    {item.meta}
-                  </small>
-                </div>
-              </Link>
+            latestNews.map((item, index) => (
+              <Fragment key={item.href}>
+                <Link
+                  className="grid grid-cols-1 gap-3.5 border-b border-[#f00018]/35 pb-4 text-white sm:grid-cols-[130px_1fr]"
+                  href={item.href}
+                >
+                  <span className="relative block h-[125px] overflow-hidden rounded-[5px]">
+                    <Image
+                      alt=""
+                      className="object-cover"
+                      fill
+                      sizes="(min-width: 640px) 130px, calc(100vw - 40px)"
+                      src={item.image}
+                    />
+                  </span>
+                  <div>
+                    <h3 className="mb-2 text-xl font-black">{item.title}</h3>
+                    <p className="mb-2 text-zinc-300">{item.summary}</p>
+                    <small className="mt-2 block font-bold text-[#ffcc00]">
+                      {item.meta}
+                    </small>
+                  </div>
+                </Link>
+                {shouldShowNewsAd({
+                  index,
+                  seedKey: item.href,
+                  total: latestNews.length
+                }) ? (
+                  <GoogleAdsenseAd className="min-h-[140px] p-2 md:col-span-2" />
+                ) : null}
+              </Fragment>
             ))
           ) : (
             <EmptyNewsSection
@@ -229,24 +253,36 @@ export default async function Home() {
           <h2 className={cardTitleClass}>Destaques</h2>
           {highlights.length > 0 ? (
             <>
-              {highlights.map(item => (
-                <Link
-                  className="grid grid-cols-[115px_1fr] gap-3.5 border-b border-[#f00018]/35 py-3.25"
-                  href={item.href}
-                  key={item.href}
-                >
-                  <img
-                    alt=""
-                    className="h-[125px] w-full rounded-[5px] object-cover"
-                    src={item.image}
-                  />
-                  <p>
-                    <b className="text-[17px]">{item.title}</b>
-                    <small className="mt-2 block text-[#ffcc00]">
-                      {item.meta}
-                    </small>
-                  </p>
-                </Link>
+              {highlights.map((item, index) => (
+                <Fragment key={item.href}>
+                  <Link
+                    className="grid grid-cols-[115px_1fr] gap-3.5 border-b border-[#f00018]/35 py-3.25"
+                    href={item.href}
+                  >
+                    <span className="relative block h-[125px] overflow-hidden rounded-[5px]">
+                      <Image
+                        alt=""
+                        className="object-cover"
+                        fill
+                        sizes="115px"
+                        src={item.image}
+                      />
+                    </span>
+                    <p>
+                      <b className="text-[17px]">{item.title}</b>
+                      <small className="mt-2 block text-[#ffcc00]">
+                        {item.meta}
+                      </small>
+                    </p>
+                  </Link>
+                  {shouldShowNewsAd({
+                    index,
+                    seedKey: item.href,
+                    total: highlights.length
+                  }) ? (
+                    <GoogleAdsenseAd className="my-3 min-h-[180px] p-2" />
+                  ) : null}
+                </Fragment>
               ))}
               <Link
                 className="mt-5 block text-center font-black uppercase text-[#ffcc00]"

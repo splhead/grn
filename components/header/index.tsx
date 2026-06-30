@@ -62,7 +62,7 @@ export default async function Header() {
               </button>
             </form>
             <div className="text-center text-xl tracking-[8px] text-[#f00018] md:text-right">
-              ● ● ▶ ☎
+              ● ● ● ●
             </div>
           </div>
         </div>

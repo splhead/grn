@@ -6,6 +6,7 @@ import { and, eq, ne } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { newsCategoriesTable, newsTable } from '@/lib/db/schema'
 import { createNewsSlug } from '@/lib/news'
+import { revalidatePublicNewsCache } from '@/lib/news-cache'
 import { getSession } from '@/lib/server'
 
 type NewsFormIntent = 'draft' | 'published' | 'save'
@@ -103,12 +104,11 @@ function getPublishedAt(value: string, status: NewsStatus) {
   return status === 'published' ? new Date() : null
 }
 
-function revalidateNewsPaths() {
+function revalidateNewsPaths(slug?: string | null) {
   revalidatePath('/admin')
   revalidatePath('/admin/noticias')
   revalidatePath('/admin/visao-geral')
-  revalidatePath('/')
-  revalidatePath('/noticias/[slug]', 'page')
+  revalidatePublicNewsCache(slug)
 }
 
 export async function createNews(formData: FormData) {
@@ -163,7 +163,7 @@ export async function createNews(formData: FormData) {
     }
   })
 
-  revalidateNewsPaths()
+  revalidateNewsPaths(slug)
 
   redirect(
     status === 'published'
@@ -250,6 +250,6 @@ export async function updateNews(formData: FormData) {
     }
   })
 
-  revalidateNewsPaths()
+  revalidateNewsPaths(slug)
   redirect(`${redirectPath}?sucesso=atualizada`)
 }

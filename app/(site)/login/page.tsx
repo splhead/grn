@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -45,9 +46,12 @@ export default function AdminLoginPage() {
     <main className="mx-auto grid w-full max-w-[1280px] px-6 py-7">
       <section className="grid min-h-[620px] overflow-hidden rounded-lg border border-[#f00018]/45 bg-[#0c0c0f] text-white shadow-[0_24px_60px_rgba(0,0,0,0.5)] lg:grid-cols-[minmax(0,1fr)_460px]">
         <div className="relative hidden min-h-full overflow-hidden bg-[#050505] lg:block">
-          <img
+          <Image
             alt=""
-            className="absolute inset-0 h-full w-full object-cover"
+            className="object-cover"
+            fill
+            priority
+            sizes="(min-width: 1024px) 820px, 0px"
             src="https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=1100&q=80"
           />
           <div className="absolute inset-0 bg-[linear-gradient(115deg,rgba(0,0,0,0.94),rgba(90,0,8,0.58))]" />

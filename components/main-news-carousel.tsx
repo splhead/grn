@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 type MainNewsCarouselItem = {
@@ -110,8 +111,12 @@ export function MainNewsCarousel({ items }: MainNewsCarouselProps) {
             key={item.href}
             tabIndex={isActive ? 0 : -1}
           >
-            <img
+            <Image
               alt=""
+              fill
+              fetchPriority={index === 0 ? 'high' : 'auto'}
+              loading={index === 0 ? 'eager' : 'lazy'}
+              sizes="(min-width: 1024px) 825px, calc(100vw - 40px)"
               className="absolute inset-0 h-full w-full object-cover"
               src={item.image}
             />

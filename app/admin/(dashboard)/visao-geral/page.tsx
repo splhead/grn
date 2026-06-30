@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { seedData, type Role } from '@/lib/news-seed'
 import {
   categoryNames,
@@ -10,6 +11,9 @@ import {
   rolePermissions,
   statusClass
 } from '@/lib/admin/ui'
+
+const defaultArticleImage =
+  'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=900&q=80'
 
 export default function AdminOverviewPage() {
   const [featuredArticle, ...latestArticles] = seedData.articles
@@ -51,11 +55,15 @@ export default function AdminOverviewPage() {
                 Publicado
               </span>
             </div>
-            <img
-              src={featuredArticle.coverImage}
+            <div className="relative aspect-[16/7] w-full overflow-hidden rounded-md">
+              <Image
               alt=""
-              className="aspect-[16/7] w-full rounded-md object-cover"
-            />
+                className="object-cover"
+                fill
+                sizes="(min-width: 1024px) 780px, calc(100vw - 48px)"
+                src={featuredArticle.coverImage ?? defaultArticleImage}
+              />
+            </div>
             <p className="my-5 text-[19px] leading-normal text-zinc-300">
               {featuredArticle.subtitle}
             </p>
@@ -83,11 +91,15 @@ export default function AdminOverviewPage() {
                   key={article.id}
                   className="grid grid-cols-1 gap-4 border-b border-[#f00018]/35 pb-4 last:border-b-0 last:pb-0 sm:grid-cols-[140px_1fr]"
                 >
-                  <img
-                    src={article.coverImage}
+                  <div className="relative aspect-[1.25/1] w-full overflow-hidden rounded-md">
+                    <Image
                     alt=""
-                    className="aspect-[1.25/1] w-full rounded-md object-cover"
-                  />
+                      className="object-cover"
+                      fill
+                      sizes="(min-width: 640px) 140px, calc(100vw - 48px)"
+                      src={article.coverImage ?? defaultArticleImage}
+                    />
+                  </div>
                   <div>
                     <div className="flex items-start justify-between gap-3.5">
                       <h3 className="text-[21px] font-black leading-tight">

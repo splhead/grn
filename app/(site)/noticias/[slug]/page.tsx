@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import Image from 'next/image'
+import { unstable_cache } from 'next/cache'
 import { notFound } from 'next/navigation'
 import { and, desc, eq, ne } from 'drizzle-orm'
 import { db } from '@/lib/db'
@@ -16,6 +18,7 @@ import {
   getArticleCategories,
   getPublishedArticles
 } from '@/lib/news'
+import { NEWS_CACHE_TAG } from '@/lib/news-cache'
 import { getSession } from '@/lib/server'
 
 type NewsDetailPageProps = {
@@ -46,8 +49,7 @@ function getReadingTime(html: string) {
   return Math.max(1, Math.ceil(words / 220))
 }
 
-async function getDbArticle(slug: string, previewId?: string) {
-  const canPreview = Boolean(previewId && (await getSession())?.user)
+async function getDbArticleQuery(slug: string, previewId?: string) {
   const [article] = await db
     .select({
       authorName: userTable.name,
@@ -63,7 +65,7 @@ async function getDbArticle(slug: string, previewId?: string) {
     .from(newsTable)
     .leftJoin(userTable, eq(newsTable.authorId, userTable.id))
     .where(
-      canPreview
+      previewId
         ? and(eq(newsTable.id, previewId as string), eq(newsTable.slug, slug))
         : and(eq(newsTable.slug, slug), eq(newsTable.status, 'published'))
     )
@@ -106,6 +108,25 @@ async function getDbArticle(slug: string, previewId?: string) {
     relatedArticles,
     subtitle: article.subtitle ?? ''
   }
+}
+
+const getCachedPublishedDbArticle = unstable_cache(
+  async (slug: string) => getDbArticleQuery(slug),
+  ['published-news-article'],
+  {
+    revalidate: 300,
+    tags: [NEWS_CACHE_TAG]
+  }
+)
+
+async function getDbArticle(slug: string, previewId?: string) {
+  if (!previewId) {
+    return getCachedPublishedDbArticle(slug)
+  }
+
+  const canPreview = Boolean((await getSession())?.user)
+
+  return canPreview ? getDbArticleQuery(slug, previewId) : null
 }
 
 function WhatsAppIcon() {
@@ -270,10 +291,13 @@ export default async function NewsDetailPage({
         </div>
 
         {article.coverImage ? (
-          <figure className="my-7 overflow-hidden rounded border border-[#f00018]/45 bg-[#0c0c0f]">
-            <img
+          <figure className="relative my-7 h-[300px] overflow-hidden rounded border border-[#f00018]/45 bg-[#0c0c0f] sm:h-[420px] lg:h-[520px]">
+            <Image
               alt=""
-              className="h-[300px] w-full object-cover sm:h-[420px] lg:h-[520px]"
+              className="object-cover"
+              fill
+              priority
+              sizes="(min-width: 1024px) 865px, calc(100vw - 40px)"
               src={article.coverImage}
             />
           </figure>

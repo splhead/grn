@@ -1,5 +1,8 @@
 import Link from 'next/link'
-import { and, asc, count, desc, eq, ilike, inArray, or } from 'drizzle-orm'
+import Image from 'next/image'
+import { unstable_cache } from 'next/cache'
+import { Fragment } from 'react'
+import { and, count, desc, eq, ilike, inArray, or } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import {
@@ -7,7 +10,11 @@ import {
   newsCategoriesTable,
   newsTable
 } from '@/lib/db/schema'
+import { getCachedCategories } from '@/lib/categories-cache'
 import { createNewsSlug } from '@/lib/news'
+import { NEWS_CACHE_TAG, NEWS_LIST_CACHE_TAG } from '@/lib/news-cache'
+import { GoogleAdsenseAd } from '@/components/google-adsense-ad'
+import { shouldShowNewsAd } from '@/lib/ad-placement'
 
 type NewsListPageProps = {
   searchParams?: Promise<{
@@ -28,7 +35,7 @@ const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
   timeZone: 'America/Manaus'
 })
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 300
 
 function getValidPage(value?: string) {
   const page = Number(value)
@@ -170,6 +177,20 @@ async function getNewsList({
   }
 }
 
+const getCachedBaseNewsList = unstable_cache(
+  async (page: number) =>
+    getNewsList({
+      categorySlug: '',
+      page,
+      search: ''
+    }),
+  ['base-news-list'],
+  {
+    revalidate: 300,
+    tags: [NEWS_CACHE_TAG, NEWS_LIST_CACHE_TAG]
+  }
+)
+
 function EmptyNewsList() {
   return (
     <div className="rounded border border-[#f00018]/45 bg-[#0c0c0f] p-8 text-center text-white md:col-span-2 lg:col-span-3">
@@ -190,19 +211,15 @@ export default async function NewsListPage({
   const page = getValidPage(params?.pagina)
   const categorySlug = params?.categoria ?? ''
   const search = String(params?.busca ?? '').trim()
-  const categories = await db
-    .select({
-      id: categoriesTable.id,
-      name: categoriesTable.name,
-      slug: categoriesTable.slug
-    })
-    .from(categoriesTable)
-    .orderBy(asc(categoriesTable.name))
-  const { articles, categoryRows, totalArticles } = await getNewsList({
-    categorySlug,
-    page,
-    search
-  })
+  const categories = await getCachedCategories()
+  const isBaseList = !categorySlug && !search
+  const { articles, categoryRows, totalArticles } = isBaseList
+    ? await getCachedBaseNewsList(page)
+    : await getNewsList({
+        categorySlug,
+        page,
+        search
+      })
   const totalPages = Math.max(1, Math.ceil(totalArticles / PAGE_SIZE))
   const categoryByArticleId = new Map<
     string,
@@ -295,49 +312,62 @@ export default async function NewsListPage({
 
       <section className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
         {articles.length > 0 ? (
-          articles.map(article => {
+          articles.map((article, index) => {
             const articleCategories = categoryByArticleId.get(article.id) ?? []
+            const articleHref = `/noticias/${article.slug ?? createNewsSlug(article.title)}`
 
             return (
-              <Link
-                className="grid overflow-hidden rounded border border-[#f00018]/45 bg-[#0c0c0f] text-white shadow-[0_18px_40px_rgba(0,0,0,0.35)] transition hover:border-[#ffcc00]/80"
-                href={`/noticias/${article.slug ?? createNewsSlug(article.title)}`}
-                key={article.id}
-              >
-                <img
-                  alt=""
-                  className="h-48 w-full object-cover"
-                  src={article.coverImage ?? defaultArticleImage}
-                />
-                <div className="grid gap-3 p-4">
-                  <div className="flex flex-wrap gap-2">
-                    <span className="rounded bg-[#f00018] px-2 py-1 text-xs font-black uppercase text-white">
-                      {getPlacementLabel(article.placement)}
-                    </span>
-                    {articleCategories.slice(0, 2).map(category => (
-                      <span
-                        className="rounded border border-[#ffcc00]/55 px-2 py-1 text-xs font-black uppercase text-[#ffcc00]"
-                        key={category.id}
-                      >
-                        {category.name}
+              <Fragment key={article.id}>
+                <Link
+                  className="grid overflow-hidden rounded border border-[#f00018]/45 bg-[#0c0c0f] text-white shadow-[0_18px_40px_rgba(0,0,0,0.35)] transition hover:border-[#ffcc00]/80"
+                  href={articleHref}
+                >
+                  <span className="relative block h-48 overflow-hidden">
+                    <Image
+                      alt=""
+                      className="object-cover"
+                      fill
+                      sizes="(min-width: 1024px) 390px, (min-width: 768px) calc((100vw - 60px) / 2), calc(100vw - 40px)"
+                      src={article.coverImage ?? defaultArticleImage}
+                    />
+                  </span>
+                  <div className="grid gap-3 p-4">
+                    <div className="flex flex-wrap gap-2">
+                      <span className="rounded bg-[#f00018] px-2 py-1 text-xs font-black uppercase text-white">
+                        {getPlacementLabel(article.placement)}
                       </span>
-                    ))}
+                      {articleCategories.slice(0, 2).map(category => (
+                        <span
+                          className="rounded border border-[#ffcc00]/55 px-2 py-1 text-xs font-black uppercase text-[#ffcc00]"
+                          key={category.id}
+                        >
+                          {category.name}
+                        </span>
+                      ))}
+                    </div>
+                    <h2 className="text-xl font-black leading-tight">
+                      {article.title}
+                    </h2>
+                    {article.subtitle ? (
+                      <p className="text-sm font-semibold leading-normal text-zinc-300">
+                        {article.subtitle}
+                      </p>
+                    ) : null}
+                    <small className="font-bold text-[#ffcc00]">
+                      {dateFormatter.format(
+                        article.publishedAt ?? article.updatedAt
+                      )}
+                    </small>
                   </div>
-                  <h2 className="text-xl font-black leading-tight">
-                    {article.title}
-                  </h2>
-                  {article.subtitle ? (
-                    <p className="text-sm font-semibold leading-normal text-zinc-300">
-                      {article.subtitle}
-                    </p>
-                  ) : null}
-                  <small className="font-bold text-[#ffcc00]">
-                    {dateFormatter.format(
-                      article.publishedAt ?? article.updatedAt
-                    )}
-                  </small>
-                </div>
-              </Link>
+                </Link>
+                {shouldShowNewsAd({
+                  index,
+                  seedKey: articleHref,
+                  total: articles.length
+                }) ? (
+                  <GoogleAdsenseAd className="min-h-[180px] p-2 md:col-span-2 lg:col-span-3" />
+                ) : null}
+              </Fragment>
             )
           })
         ) : (

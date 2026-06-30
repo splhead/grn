@@ -16,6 +16,7 @@ import {
 } from '@/lib/admin/ui'
 import { count, desc, eq, inArray } from 'drizzle-orm'
 import { createNewsSlug } from '@/lib/news'
+import { revalidatePublicNewsCache } from '@/lib/news-cache'
 
 type NewsListPageProps = {
   searchParams?: Promise<{
@@ -55,7 +56,7 @@ async function archiveNews(formData: FormData) {
 
   revalidatePath('/admin')
   revalidatePath('/admin/visao-geral')
-  revalidatePath('/')
+  revalidatePublicNewsCache()
   redirect('/admin')
 }
 
@@ -78,7 +79,7 @@ async function restoreNews(formData: FormData) {
 
   revalidatePath('/admin')
   revalidatePath('/admin/visao-geral')
-  revalidatePath('/')
+  revalidatePublicNewsCache()
   redirect('/admin')
 }
 
@@ -117,7 +118,7 @@ async function publishNews(formData: FormData) {
 
   revalidatePath('/admin')
   revalidatePath('/admin/visao-geral')
-  revalidatePath('/')
+  revalidatePublicNewsCache(article.slug || createNewsSlug(article.title))
   redirect('/admin')
 }
 
